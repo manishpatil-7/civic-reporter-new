@@ -1,15 +1,8 @@
 import express from "express";
-import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Complaint from "../models/Complaint.js"; // 🔥 ADD THIS
 
 const router = express.Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash"
-});
 
 router.post("/analyze", async (req, res) => {
   console.log("AI ROUTE HIT ✅");
@@ -20,13 +13,18 @@ router.post("/analyze", async (req, res) => {
       return res.status(400).json({ message: "Image URL required" });
     }
 
-    // 🔥 Step 1: Download image
-    const response = await axios.get(imageUrl, {
-      responseType: "arraybuffer"
+    // Dynamic intialization ensures process.env is read at runtime not import time
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash"
     });
 
+    // 🔥 Step 1: Download image using native fetch which works better on Render
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+
     // 🔥 Step 2: Convert to base64
-    const base64Image = Buffer.from(response.data).toString("base64");
+    const base64Image = Buffer.from(arrayBuffer).toString("base64");
 
     // 🔥 Step 3: Send to Gemini
     const result = await model.generateContent({
@@ -91,7 +89,7 @@ Rules:
       parsed = JSON.parse(jsonString);
     } catch (err) {
       console.log("JSON parse error:", err.message);
-      return res.json({ raw: cleaned });
+      return res.json({ raw: cleaned, error: "JSON Parse Error: " + err.message });
     }
 
     // 🔥 Priority calculation
@@ -118,7 +116,12 @@ Rules:
 
   } catch (error) {
     console.error("Gemini Error:", error.message);
-    res.status(500).json({ message: "AI failed" });
+    // Send full error details.
+    res.status(500).json({ 
+      message: "AI failed", 
+      errorReason: error.message,
+      stack: error.stack 
+    });
   }
 });
 

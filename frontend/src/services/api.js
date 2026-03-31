@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // Proxy setup will handle the port routing locally in vite.config.js, 
-// but we'll use absolute localhost for explicit connection here since they aren't configured yet.
-const API_BASE_URL = 'http://localhost:5000/api';
+// using Vite's environment variables for production deployments.
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://civic-reporter.onrender.com/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL, 
