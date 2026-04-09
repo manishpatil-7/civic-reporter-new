@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// Proxy setup will handle the port routing locally in vite.config.js, 
-// using Vite's environment variables for production deployments.
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://civic-reporter.onrender.com/api');
 
@@ -9,30 +7,28 @@ const api = axios.create({
   baseURL: API_BASE_URL, 
 });
 
-// Since the user drops a file, we need to upload it to their Cloudinary setup first 
-// to get the imageUrl, which we pass to Gemini and the final createComplaint.
+// Upload image to Cloudinary
 export const uploadImage = async (file) => {
   const formData = new FormData();
   formData.append('image', file);
-  // Axios automatically detects FormData and applies the correct Content-Type with boundary limits.
   return api.post('/upload', formData);
 };
 
-export const analyzeImage = async (file) => {
+// Analyze image with AI — now accepts userName and locationAddress
+export const analyzeImage = async (file, { userName = '', locationAddress = '' } = {}) => {
   // First, upload to cloudinary via our endpoint
   const uploadRes = await uploadImage(file);
   const imageUrl = uploadRes.data.imageUrl;
   
-  // Second, hit Gemini AI with the generated imageUrl
-  const aiRes = await api.post('/ai/analyze', { imageUrl });
+  // Second, hit Gemini AI with the generated imageUrl + user context
+  const aiRes = await api.post('/ai/analyze', { imageUrl, userName, locationAddress });
   
   // Attach imageUrl to result so Submit page has it
   return { data: { ...aiRes.data, imageUrl } };
 };
 
-// Simulate duplicate checking (as a local check just for WOW effect)
+// Duplicate check
 export const checkDuplicate = async (problemType, location) => {
-  // We mock the duplicate check delay since we don't have a Vector search endpoint built yet
   await new Promise(resolve => setTimeout(resolve, 800));
   if (problemType.toLowerCase().includes('pothole') || Math.random() > 0.5) {
     return { data: { isDuplicate: true, confidence: 85, similarId: '1' } };
@@ -40,6 +36,7 @@ export const checkDuplicate = async (problemType, location) => {
   return { data: { isDuplicate: false } };
 };
 
+// Complaints CRUD
 export const createComplaint = async (complaintData) => {
   return await api.post('/complaints', complaintData);
 };
@@ -54,6 +51,10 @@ export const getComplaints = async () => {
 
 export const getComplaintById = async (id) => {
   return await api.get(`/complaints/${id}`);
+};
+
+export const getComplaintsByUser = async (userId) => {
+  return await api.get(`/complaints/user/${userId}`);
 };
 
 export const upvoteComplaint = async (id) => {

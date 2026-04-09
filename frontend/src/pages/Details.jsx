@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getComplaintById, upvoteComplaint } from '../services/api';
-import { ThumbsUp, MapPin, ArrowLeft, Clock, AlertTriangle, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import { ThumbsUp, MapPin, ArrowLeft, Clock, AlertTriangle, Image as ImageIcon, CheckCircle2, Building2 } from 'lucide-react';
+import StatusTracker from '../components/StatusTracker';
 
 const Details = () => {
   const { id } = useParams();
@@ -10,7 +11,7 @@ const Details = () => {
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [upvoting, setUpvoting] = useState(false);
-  const [showAfterImage, setShowAfterImage] = useState(false); // Toggle state
+  const [showAfterImage, setShowAfterImage] = useState(false);
 
   useEffect(() => {
     const fetchComplaint = async () => {
@@ -139,16 +140,43 @@ const Details = () => {
 
             <h1 className="text-4xl font-extrabold text-white mb-2">{complaint.problemType}</h1>
             
-            <div className="flex items-center space-x-6 text-sm text-gray-400 border-b border-white/10 pb-6 mt-4">
+            {/* Status Tracker */}
+            <div className="glass-panel p-4 rounded-xl mt-4 mb-4">
+              <StatusTracker status={complaint.status} />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 border-b border-white/10 pb-6 mt-4">
               <span className="flex items-center space-x-1">
                 <MapPin className="w-4 h-4 text-blue-400" />
-                <span>{complaint.location[0].toFixed(4)}, {complaint.location[1].toFixed(4)}</span>
+                <span>
+                  {complaint.locationAddress || 
+                   (complaint.location && Array.isArray(complaint.location)
+                     ? `${complaint.location[0]?.toFixed?.(4) || '—'}, ${complaint.location[1]?.toFixed?.(4) || '—'}`
+                     : '—')}
+                </span>
               </span>
               <span className="flex items-center space-x-1">
                 <Clock className="w-4 h-4 text-purple-400" />
                 <span>{new Date(complaint.createdAt).toLocaleDateString()}</span>
               </span>
+              {complaint.userName && (
+                <span className="flex items-center space-x-1">
+                  <span className="w-4 h-4 text-center text-pink-400">👤</span>
+                  <span>{complaint.userName}</span>
+                </span>
+              )}
             </div>
+
+            {/* Department */}
+            {complaint.department && (
+              <div className="flex items-center space-x-2 mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                <Building2 className="w-5 h-5 text-green-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Suggested Department</p>
+                  <p className="text-sm font-medium text-green-300">{complaint.department}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">

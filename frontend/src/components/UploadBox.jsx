@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { UploadCloud, Image as ImageIcon, X } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, X, Camera } from 'lucide-react';
 
 const UploadBox = ({ onUpload }) => {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(null);
   const inputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -44,23 +45,37 @@ const UploadBox = ({ onUpload }) => {
     e.stopPropagation();
     setPreview(null);
     if (inputRef.current) inputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
     onUpload(null, null);
   };
 
+  const handleCameraCapture = (e) => {
+    e.stopPropagation();
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  };
+
   return (
-    <div className="w-full max-w-xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto mt-8">
       <motion.div
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`relative glass-panel rounded-2xl p-8 border-2 border-dashed transition-colors duration-300 ${
-          dragActive ? "border-blue-400 bg-blue-500/10" : "border-gray-500/50 hover:border-blue-300 pointer-events-auto"
-        } cursor-pointer min-h-[300px] flex flex-col items-center justify-center text-center`}
+        whileHover={{ scale: 1.01 }}
+        className={`relative glass-panel rounded-3xl p-10 border-2 transition-all duration-300 ${
+          dragActive 
+            ? "border-blue-400 bg-blue-500/10 shadow-[0_0_30px_rgba(59,130,246,0.3)]" 
+            : "border-dashed border-white/20 hover:border-blue-400/50 hover:bg-white/5 pointer-events-auto shadow-2xl shadow-black/50"
+        } cursor-pointer min-h-[360px] flex flex-col items-center justify-center text-center overflow-hidden`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
       >
+        {/* Decorative corner glows */}
+        <div className="absolute -top-10 -left-10 w-32 h-32 bg-blue-500/20 blur-2xl rounded-full"></div>
+        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/20 blur-2xl rounded-full"></div>
+
+        {/* Standard file picker */}
         <input
           ref={inputRef}
           type="file"
@@ -69,37 +84,73 @@ const UploadBox = ({ onUpload }) => {
           className="hidden"
         />
 
-        {preview ? (
-          <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden group">
-            <img 
-              src={preview} 
-              alt="Preview" 
-              className="w-full h-full object-cover rounded-xl"
-            />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <button 
-                onClick={removeImage}
-                className="bg-red-500 text-white p-3 rounded-full hover:bg-red-600 shadow-lg transform hover:scale-110 transition-transform"
+        {/* Camera capture input (Android/iOS) */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleChange}
+          className="hidden"
+        />
+
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
+          {preview ? (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative w-full h-full min-h-[300px] rounded-2xl overflow-hidden group shadow-lg"
+            >
+              <img 
+                src={preview} 
+                alt="Preview" 
+                className="w-full h-full object-cover rounded-2xl transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                <button 
+                  onClick={removeImage}
+                  className="bg-red-500/90 text-white p-4 rounded-full hover:bg-red-500 shadow-xl shadow-red-500/20 transform hover:scale-110 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center space-y-5"
+            >
+              <motion.div 
+                animate={dragActive ? { y: -10, scale: 1.1 } : { y: 0, scale: 1 }}
+                className="p-5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full inline-block backdrop-blur-md border border-white/10 shadow-lg"
               >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="p-4 bg-white/5 rounded-full inline-block backdrop-blur-sm">
-              <UploadCloud className="w-12 h-12 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xl font-semibold mb-2">Drag & Drop visual evidence</p>
-              <p className="text-sm text-gray-400">or click to browse your files</p>
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-gray-500 mt-4">
-              <ImageIcon className="w-4 h-4" />
-              <span>Supports JPG, PNG</span>
-            </div>
-          </div>
-        )}
+                <UploadCloud className="w-14 h-14 text-blue-400" />
+              </motion.div>
+              <div>
+                <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 mb-2">
+                  Drop evidence here
+                </p>
+                <p className="text-base text-gray-400 font-medium">or click to browse your files</p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6">
+                <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>JPG, PNG up to 10MB</span>
+                </div>
+                
+                <button
+                  onClick={handleCameraCapture}
+                  className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-blue-600/30 to-purple-600/30 text-blue-300 rounded-full border border-blue-500/30 hover:from-blue-600/50 hover:to-purple-600/50 transition-all font-semibold hover:shadow-lg hover:shadow-blue-500/20"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Take Photo</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </div>
       </motion.div>
     </div>
   );

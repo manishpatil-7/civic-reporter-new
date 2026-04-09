@@ -7,10 +7,33 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
-    // Transform location coordinates so Leaflet works directly off `c.location`
     const mapped = complaints.map(c => {
        const doc = c.toJSON();
-       return { ...doc, location: doc.locationArray, id: doc._id };
+       return {
+         ...doc,
+         location: doc.locationArray,
+         locationAddress: doc.location?.address || '',
+         id: doc._id,
+       };
+    });
+    res.json(mapped);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🚀 GET BY USER ID (For "My Complaints")
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    const mapped = complaints.map(c => {
+       const doc = c.toJSON();
+       return {
+         ...doc,
+         location: doc.locationArray,
+         locationAddress: doc.location?.address || '',
+         id: doc._id,
+       };
     });
     res.json(mapped);
   } catch (error) {
@@ -24,19 +47,41 @@ router.get("/:id", async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ message: "Not found" });
     const doc = complaint.toJSON();
-    res.json({ ...doc, location: doc.locationArray, id: doc._id });
+    res.json({
+      ...doc,
+      location: doc.locationArray,
+      locationAddress: doc.location?.address || '',
+      id: doc._id,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// 🚀 CREATE COMPLAINT (Receives JSON from frontend after AI analysis)
+// 🚀 CREATE COMPLAINT
 router.post("/", async (req, res) => {
   try {
     const { 
       imageUrl, problemType, severity, description, 
-      hindiDescription, formalLetter 
+      hindiDescription, formalLetter, userId, userName,
+      location, department
     } = req.body;
+
+    // Build location object — accept either { lat, lng, address } or fallback
+    let locationData;
+    if (location && location.lat && location.lng) {
+      locationData = {
+        lat: location.lat,
+        lng: location.lng,
+        address: location.address || '',
+      };
+    } else {
+      locationData = {
+        lat: 28.6139 + (Math.random() - 0.5) * 0.05,
+        lng: 77.2090 + (Math.random() - 0.5) * 0.05,
+        address: '',
+      };
+    }
 
     const complaint = new Complaint({
       imageUrl,
@@ -45,16 +90,20 @@ router.post("/", async (req, res) => {
       description,
       hindiDescription,
       formalLetter,
-      // Create random fuzzy coordinate since frontend doesn't supply gps yet natively
-      location: {
-         lat: 28.6139 + (Math.random() - 0.5) * 0.05,
-         lng: 77.2090 + (Math.random() - 0.5) * 0.05
-      }
+      userId: userId || '',
+      userName: userName || 'Anonymous',
+      department: department || 'General Municipal Department',
+      location: locationData,
     });
 
     const saved = await complaint.save();
     const doc = saved.toJSON();
-    res.status(201).json({ ...doc, location: doc.locationArray, id: doc._id });
+    res.status(201).json({
+      ...doc,
+      location: doc.locationArray,
+      locationAddress: doc.location?.address || '',
+      id: doc._id,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
@@ -70,7 +119,12 @@ router.patch("/:id", async (req, res) => {
       { new: true }
     );
     const doc = updated.toJSON();
-    res.json({ ...doc, location: doc.locationArray, id: doc._id });
+    res.json({
+      ...doc,
+      location: doc.locationArray,
+      locationAddress: doc.location?.address || '',
+      id: doc._id,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,7 +140,12 @@ router.patch("/:id/upvote", async (req, res) => {
     await complaint.save();
     
     const doc = complaint.toJSON();
-    res.json({ ...doc, location: doc.locationArray, id: doc._id });
+    res.json({
+      ...doc,
+      location: doc.locationArray,
+      locationAddress: doc.location?.address || '',
+      id: doc._id,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

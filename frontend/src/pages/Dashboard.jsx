@@ -1,15 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { getComplaints } from '../services/api';
 import ComplaintCard from '../components/ComplaintCard';
-import { Filter, Layers } from 'lucide-react';
+import { Filter, Layers, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+
+/* Dark mode map style */
+const darkMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8892b0' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#a8b2d1' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#4ade80' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a4a' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1e293b' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3b3b6b' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1e293b' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+  { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#334155' }] },
+];
+
+const mapContainerStyle = { width: '100%', height: '100%' };
+const defaultCenter = { lat: 28.6139, lng: 77.2090 };
+
+const severityColor = {
+  High: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+  Medium: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+  Low: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+};
 
 const Dashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [selectedMarker, setSelectedMarker] = useState(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+  });
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -28,6 +61,25 @@ const Dashboard = () => {
   const filtered = filter === 'All' 
     ? complaints 
     : complaints.filter(c => c.severity === filter);
+
+  // Stats
+  const pendingCount = complaints.filter(c => c.status === 'Pending').length;
+  const inProgressCount = complaints.filter(c => c.status === 'In Progress').length;
+  const resolvedCount = complaints.filter(c => c.status === 'Resolved').length;
+
+  const onMapLoad = useCallback((map) => {
+    if (filtered.length > 0 && window.google) {
+      const bounds = new window.google.maps.LatLngBounds();
+      filtered.forEach(c => {
+        if (c.location && c.location.length === 2) {
+          bounds.extend({ lat: c.location[0], lng: c.location[1] });
+        }
+      });
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 50 });
+      }
+    }
+  }, [filtered]);
 
   return (
     <div className="min-h-screen pt-24 px-6 max-w-7xl mx-auto">
@@ -70,10 +122,16 @@ const Dashboard = () => {
                 <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">Total Issues</p>
               </div>
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
-                <p className="text-3xl font-extrabold text-green-400">
-                  {complaints.filter(c => c.status === 'Resolved').length}
-                </p>
+                <p className="text-3xl font-extrabold text-green-400">{resolvedCount}</p>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">Resolved</p>
+              </div>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                <p className="text-3xl font-extrabold text-orange-400">{pendingCount}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">Pending</p>
+              </div>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                <p className="text-3xl font-extrabold text-sky-400">{inProgressCount}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">In Progress</p>
               </div>
             </div>
           </div>
@@ -83,28 +141,61 @@ const Dashboard = () => {
               <MapIcon />
               <span>Issue Heatmap</span>
             </h3>
-            <div className="flex-1 rounded-xl overflow-hidden pointer-events-none sm:pointer-events-auto shadow-inner border border-white/5">
-              <MapContainer 
-                center={[28.6139, 77.2090]} 
-                zoom={12} 
-                className="h-full w-full"
-                scrollWheelZoom={false}
-              >
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                />
-                {filtered.map(c => (
-                  <Marker position={c.location} key={c.id}>
-                    <Popup>
-                      <div className="p-1 font-sans">
-                        <p className="font-bold text-gray-900">{c.problemType}</p>
-                        <p className="text-xs text-gray-600">{c.severity} Severity</p>
+            <div className="flex-1 rounded-xl overflow-hidden shadow-inner border border-white/5">
+              {!isLoaded ? (
+                <div className="w-full h-full flex items-center justify-center bg-slate-800/50">
+                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={defaultCenter}
+                  zoom={12}
+                  onLoad={onMapLoad}
+                  options={{
+                    styles: darkMapStyle,
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    zoomControlOptions: {
+                      position: window.google?.maps?.ControlPosition?.RIGHT_BOTTOM,
+                    },
+                    gestureHandling: 'cooperative',
+                  }}
+                >
+                  {filtered.map(c => {
+                    const getMarkerIcon = (complaint) => {
+                      if (complaint.status === 'Resolved') return 'http://maps.google.com/mapfiles/ms/icons/green-dot.png';
+                      if (complaint.severity === 'High') return 'http://maps.google.com/mapfiles/ms/icons/red-dot.png';
+                      return 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
+                    };
+                    
+                    return c.location && c.location.length === 2 && (
+                      <MarkerF
+                        key={c._id || c.id}
+                        position={{ lat: c.location[0], lng: c.location[1] }}
+                        icon={getMarkerIcon(c)}
+                        onClick={() => setSelectedMarker(c)}
+                      />
+                    );
+                  })}
+
+                  {selectedMarker && (
+                    <InfoWindowF
+                      position={{ lat: selectedMarker.location[0], lng: selectedMarker.location[1] }}
+                      onCloseClick={() => setSelectedMarker(null)}
+                    >
+                      <div style={{ padding: '4px', fontFamily: 'system-ui, sans-serif' }}>
+                        <p style={{ fontWeight: 700, color: '#1a1a2e', margin: 0, fontSize: '14px' }}>
+                          {selectedMarker.problemType}
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>
+                          {selectedMarker.severity} Severity
+                        </p>
                       </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+                    </InfoWindowF>
+                  )}
+                </GoogleMap>
+              )}
             </div>
           </div>
         </div>
@@ -123,7 +214,7 @@ const Dashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filtered.map(complaint => (
-                <ComplaintCard key={complaint.id} complaint={complaint} />
+                <ComplaintCard key={complaint.id || complaint._id} complaint={complaint} />
               ))}
             </div>
           )}

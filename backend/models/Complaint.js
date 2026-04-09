@@ -7,13 +7,11 @@ const complaintSchema = new mongoose.Schema({
   },
 
   afterImageUrl: {
-    type: String, // Added for Admin "Resolution Evidence"
+    type: String,
   },
 
   problemType: {
     type: String,
-    // Note: AI might return slightly different strings, so we remove the strict enum 
-    // to allow AI's dynamic detections (e.g. "Broken Streetlight") but default to "Other"
     default: "Other",
   },
 
@@ -33,11 +31,28 @@ const complaintSchema = new mongoose.Schema({
   },
 
   formalLetter: {
-    type: String, // Added for AI generation
+    type: String,
   },
 
   hindiDescription: {
-    type: String, // Added for WOW feature
+    type: String,
+  },
+
+  // User who submitted
+  userId: {
+    type: String,
+    default: "",
+  },
+
+  userName: {
+    type: String,
+    default: "Anonymous",
+  },
+
+  // Smart department suggestion
+  department: {
+    type: String,
+    default: "General Municipal Department",
   },
 
   location: {
@@ -48,7 +63,7 @@ const complaintSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["Pending", "In Progress", "Resolved"], // Updated to match FrontEnd caps
+    enum: ["Pending", "In Progress", "Resolved"],
     default: "Pending"
   },
 
@@ -63,12 +78,12 @@ const complaintSchema = new mongoose.Schema({
   },
 });
 
-// Virtual field for location array to easily inject into leaflet map `[lat, lng]`
+// Virtual field for location array for map rendering [lat, lng]
 complaintSchema.virtual('locationArray').get(function() {
   if (this.location && this.location.lat && this.location.lng) {
     return [this.location.lat, this.location.lng];
   }
-  return [28.6139 + (Math.random() - 0.5) * 0.05, 77.2090 + (Math.random() - 0.5) * 0.05]; // fallback
+  return [28.6139 + (Math.random() - 0.5) * 0.05, 77.2090 + (Math.random() - 0.5) * 0.05];
 });
 
 // Ensure virtuals are included in JSON responses
