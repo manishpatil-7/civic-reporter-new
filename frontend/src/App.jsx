@@ -11,7 +11,11 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import MyComplaints from './pages/MyComplaints';
-import FAB from './components/FAB';
+// FAB removed — report buttons already exist in Navbar and Dashboard
+import EnhancedBackground from './components/EnhancedBackground';
+import CursorEffect from './components/CursorEffect';
+import SmoothScroll from './components/SmoothScroll';
+import AIChatbot from './components/AIChatbot';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -53,45 +57,25 @@ const AnimatedRoutes = () => {
   );
 };
 
-const BackgroundEffects = () => {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-          rotate: [0, 90, 0]
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-blue-600/20 blur-[150px] rounded-full mix-blend-screen" 
-      />
-      <motion.div 
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.2, 0.4, 0.2],
-          rotate: [0, -90, 0]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] bg-purple-600/20 blur-[150px] rounded-full mix-blend-screen" 
-      />
-    </div>
-  );
-};
+// BackgroundEffects replaced by EnhancedBackground component
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="relative min-h-screen text-slate-100 font-sans selection:bg-blue-500/30">
-          <BackgroundEffects />
-          
-          <Navbar />
-          <FAB />
-          
-          <main className="relative z-10 w-full h-full">
-            <AnimatedRoutes />
-          </main>
-        </div>
+        <SmoothScroll>
+          <div className="relative min-h-screen text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+            <EnhancedBackground />
+            <CursorEffect />
+            
+            <Navbar />
+            <AIChatbot />
+            
+            <main className="relative z-10 w-full h-full">
+              <AnimatedRoutes />
+            </main>
+          </div>
+        </SmoothScroll>
       </AuthProvider>
     </Router>
   );

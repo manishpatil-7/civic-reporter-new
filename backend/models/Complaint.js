@@ -49,10 +49,37 @@ const complaintSchema = new mongoose.Schema({
     default: "Anonymous",
   },
 
+  userEmail: {
+    type: String,
+  },
+
   // Smart department suggestion
   department: {
     type: String,
     default: "General Municipal Department",
+  },
+
+  // Authority detection
+  authorityType: {
+    type: String,
+    enum: ["gram_panchayat", "municipal_council", "municipal_corporation"],
+    default: "municipal_corporation",
+  },
+
+  authorityBody: {
+    type: String,
+    default: "",
+  },
+
+  // Translated version of the formal letter
+  translatedLetter: {
+    type: String,
+    default: "",
+  },
+
+  translatedLanguage: {
+    type: String,
+    default: "",
   },
 
   location: {
@@ -72,10 +99,86 @@ const complaintSchema = new mongoose.Schema({
     default: 0,
   },
 
+  upvotedBy: {
+    type: [String],
+    default: [],
+  },
+
+  timeline: {
+    type: [{
+      status: String,
+      updatedBy: String,
+      remarks: String,
+      timestamp: { type: Date, default: Date.now }
+    }],
+    default: []
+  },
+
+  verificationStatus: {
+    type: String,
+    enum: ["Pending", "Verified", "Suspicious", "Rejected", "Approved manually", "Rejected manually", "Spam"],
+    default: "Pending" // Will be updated by AI or Admin
+  },
+  
+  verificationConfidence: {
+    type: Number,
+    default: 0
+  },
+
+  // Image validation - whether the image shows a valid civic issue
+  imageValidation: {
+    isValid: { type: Boolean, default: true },
+    reason: { type: String, default: "" },
+    detectedContent: { type: String, default: "" },
+  },
+
+  // Category match - AI cross-check between image and selected category
+  categoryMatch: {
+    matches: { type: Boolean, default: true },
+    imageCategory: { type: String, default: "" },
+    selectedCategory: { type: String, default: "" },
+    confidence: { type: Number, default: 0 },
+  },
+
+  // Location verification
+  locationVerified: {
+    type: Boolean,
+    default: false,
+  },
+
+  locationDistance: {
+    type: Number, // distance in km between user and complaint location
+    default: 0,
+  },
+
+  // Spam/Flag system
+  flagReason: {
+    type: String,
+    default: "",
+  },
+
+  spamStatus: {
+    type: String,
+    enum: ["clean", "flagged", "spam"],
+    default: "clean",
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,
   },
+});
+
+// Auto-add "Pending" to timeline before saving for the first time
+complaintSchema.pre('save', function() {
+  if (this.isNew && this.timeline.length === 0) {
+    this.timeline.push({
+      status: this.status || 'Pending',
+      updatedBy: 'System',
+      remarks: 'Complaint logged into the system.',
+      timestamp: new Date()
+    });
+  }
 });
 
 // Virtual field for location array for map rendering [lat, lng]

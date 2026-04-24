@@ -60,22 +60,39 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Signup
-  const signup = async (name, email, password, role = 'user') => {
+  const signup = async (name, email, password) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     // Set displayName on Firebase Auth
     await updateProfile(cred.user, { displayName: name });
-    // Create Firestore user doc
+    
+    // Create Firestore user doc FORCING role to 'citizen' (default)
     await setDoc(doc(db, 'users', cred.user.uid), {
       uid: cred.user.uid,
       name,
       email,
-      role,
+      role: 'citizen',
       createdAt: new Date().toISOString(),
     });
+    
     // Update local state
-    const data = { uid: cred.user.uid, name, email, role };
+    const data = { uid: cred.user.uid, name, email, role: 'citizen' };
     setUserData(data);
     return data;
+  };
+
+  // Helper to get current Firebase ID token
+  const getIdToken = async () => {
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken(true); // true forces refresh to get latest claims
+    }
+    return null;
+  };
+  
+  // Expose a method to refresh user data from Firestore (useful after role changes)
+  const refreshUserData = async () => {
+    if (auth.currentUser) {
+      await fetchUserData(auth.currentUser);
+    }
   };
 
   // Login
@@ -99,6 +116,8 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
+    getIdToken,
+    refreshUserData,
     isAdmin: userData?.role === 'admin',
     isAuthenticated: !!user,
   };

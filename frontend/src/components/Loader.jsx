@@ -24,21 +24,21 @@ const Loader = ({ text }) => {
 
   return (
     <div className="flex flex-col items-center justify-center p-8 space-y-8">
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex items-center justify-center w-32 h-32">
         {/* Outer rotating dashed ring */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-          className="absolute inset-[-20px] rounded-full border border-dashed border-blue-500/30 w-32 h-32"
+          className="absolute inset-0 rounded-full border border-dashed border-blue-500/30"
         />
         {/* Inner rotating solid ring */}
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-          className="absolute inset-[-10px] rounded-full border-2 border-t-purple-500 border-r-transparent border-b-blue-500 border-l-transparent w-28 h-28 opacity-80"
+          className="absolute inset-2 rounded-full border-2 border-t-purple-500 border-r-transparent border-b-blue-500 border-l-transparent opacity-80"
         />
         {/* Center Glow */}
-        <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
+        <div className="absolute inset-4 bg-blue-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
         {/* Icon */}
         <ScanSearch className="w-12 h-12 text-blue-300 relative z-10" />
       </div>

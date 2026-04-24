@@ -2,29 +2,38 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import dns, { setServers } from "dns";
+import dns from "dns";
 import complaintRoutes from "./routes/complaint.js";
 import uploadRoutes from "./routes/upload.js";
 import aiRoutes from "./routes/ai.js";
+import authorityRoutes from "./routes/authority.js";
+import userRoutes from "./routes/users.js";
+import notificationRoutes from "./routes/notification.js";
+import otpRoutes from "./routes/otp.js";
+
+// Load env first
+dotenv.config();
 
 dns.setServers(["1.1.1.1","8.8.8.8"]);
 
 console.log("Starting server...");
 
-// Load env first
-dotenv.config();
-
-// Then connect DB
+// Connect DB
 connectDB();
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
-app.use("/api/ai", aiRoutes);
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+app.use("/api/ai", aiRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/authority", authorityRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/otp", otpRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Backend is running...");
@@ -32,6 +41,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
-});
+});
