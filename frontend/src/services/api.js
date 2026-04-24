@@ -164,4 +164,15 @@ export const checkEmailVerified = async (email) => {
   return await api.get(`/otp/check/${encodeURIComponent(email)}`);
 };
 
+// --- Location Extraction from Image EXIF ---
+export const extractLocationFromImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return api.post('/location/extract', formData);
+};
+
+export const reverseGeocodeLocation = async (lat, lng) => {
+  return api.get(`/location/reverse?lat=${lat}&lng=${lng}`);
+};
+
 export default api;

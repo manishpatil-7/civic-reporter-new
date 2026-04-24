@@ -5,9 +5,11 @@ import { AlertCircle, FileText, MapPin, Navigation, Building2, User, Download, C
 import toast from 'react-hot-toast';
 import UploadBox from '../components/UploadBox';
 import Loader from '../components/Loader';
-import { analyzeImage, createComplaint, checkDuplicate, detectAuthority, translateLetter, checkCanSubmit } from '../services/api';
+import LocationDetector from '../components/LocationDetector';
+import { analyzeImage, createComplaint, checkDuplicate, detectAuthority, translateLetter, checkCanSubmit, extractLocationFromImage, reverseGeocodeLocation } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import useUserLocation from '../hooks/useLocation';
+import exifr from 'exifr';
 import { getDepartment } from '../utils/departments';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import AdvancedMarker from '../components/AdvancedMarker';
@@ -80,6 +82,12 @@ const Submit = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [translatedLetter, setTranslatedLetter] = useState('');
   const [translating, setTranslating] = useState(false);
+
+  // EXIF location detection state
+  const [exifStatus, setExifStatus] = useState('idle'); // 'idle' | 'detecting' | 'found' | 'not_found' | 'error'
+  const [exifSource, setExifSource] = useState('');
+  const [exifAddress, setExifAddress] = useState(null);
+  const [locationSource, setLocationSource] = useState('BROWSER_GPS');
 
   const [mapInstance, setMapInstance] = useState(null);
 
@@ -180,6 +188,7 @@ const Submit = () => {
     setPreview(url);
     setImageValidation(null);
     setRateLimitError(null);
+    setExifStatus('idle');
     setStep(2);
     
     try {
@@ -196,6 +205,91 @@ const Submit = () => {
         } catch {}
       }
 
+      // ✅ EXIF LOCATION EXTRACTION — CLIENT-SIDE FIRST (most reliable on mobile)
+      // Parse EXIF directly from the File object in the browser.
+      // This is critical because mobile browsers may strip EXIF during HTTP upload.
+      setExifStatus('detecting');
+      const exifPromise = (async () => {
+        try {
+          // Step 1: Try client-side EXIF parsing (instant, works on mobile)
+          console.log('📍 Attempting client-side EXIF parse...');
+          const exif = await exifr.parse(uploadedFile, {
+            gps: true,
+            tiff: true,
+            xmp: true,
+            iptc: true,
+          }).catch(() => null);
+
+          if (exif) {
+            console.log('📍 Client EXIF keys:', Object.keys(exif).join(', '));
+          }
+
+          // Check for GPS coordinates in client-side EXIF
+          if (exif && exif.latitude != null && exif.longitude != null) {
+            const lat = exif.latitude;
+            const lng = exif.longitude;
+            console.log(`✅ CLIENT-SIDE EXIF GPS found: ${lat}, ${lng}`);
+
+            // Reverse geocode to get structured address
+            let address = { state: '', district: '', city: '', area: '', fullAddress: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+            try {
+              const geoRes = await reverseGeocodeLocation(lat, lng);
+              address = geoRes.data;
+            } catch (geoErr) {
+              console.warn('📍 Reverse geocode failed, using coords only:', geoErr.message);
+            }
+
+            setExifStatus('found');
+            setExifSource('EXIF_GPS');
+            setExifAddress(address);
+            setLocationSource('EXIF_GPS');
+
+            const newPos = { lat, lng };
+            setMapCenter(newPos);
+            setMarkerPos(newPos);
+            handleDetectAuthority(lat, lng);
+
+            toast.success('📍 Location detected from photo!', { duration: 3000 });
+            return; // Done — no need for server fallback
+          }
+
+          // Step 2: Client didn't find GPS — try server-side (checks Plus Code, Address, etc.)
+          console.log('📍 No client-side GPS, trying server extraction...');
+          try {
+            const serverRes = await extractLocationFromImage(uploadedFile);
+            const serverData = serverRes.data;
+            console.log('📍 Server EXIF result:', serverData);
+
+            if (serverData.found) {
+              setExifStatus('found');
+              setExifSource(serverData.source);
+              setExifAddress(serverData.address);
+              setLocationSource(serverData.source);
+
+              const newPos = { lat: serverData.latitude, lng: serverData.longitude };
+              setMapCenter(newPos);
+              setMarkerPos(newPos);
+              handleDetectAuthority(serverData.latitude, serverData.longitude);
+
+              toast.success('📍 Location detected from photo!', { duration: 3000 });
+              return;
+            }
+          } catch (serverErr) {
+            console.warn('📍 Server extraction failed:', serverErr.message);
+          }
+
+          // Step 3: Nothing found anywhere — fallback
+          setExifStatus('not_found');
+          setLocationSource('BROWSER_GPS');
+          console.log('📍 No EXIF location — using browser GPS fallback');
+        } catch (err) {
+          console.error('📍 EXIF extraction error:', err);
+          setExifStatus('error');
+          setLocationSource('BROWSER_GPS');
+        }
+      })();
+
+      // Ensure browser location is available for AI context
       let locationAddress = location.address || '';
       if (!locationAddress && !location.loading) {
         try {
@@ -244,6 +338,9 @@ const Submit = () => {
           department: getDepartment(data.problemType),
         });
       }
+
+      // Wait for EXIF to finish before duplicates check (uses the best location)
+      await exifPromise.catch(() => {});
 
       // Check for duplicates
       const dupeRes = await checkDuplicate(data.problemType, [
@@ -296,12 +393,13 @@ const Submit = () => {
           lng: markerPos?.lng || location.lng || 0,
           address: authorityInfo?.displayAddress || location.address || 'User Specified Location',
         },
-        state: authorityInfo?.address?.state || '',
-        district: authorityInfo?.address?.district || '',
-        city: authorityInfo?.address?.city || authorityInfo?.address?.town || '',
-        area: authorityInfo?.address?.village || authorityInfo?.address?.suburb || '',
+        state: exifAddress?.state || authorityInfo?.address?.state || '',
+        district: exifAddress?.district || authorityInfo?.address?.district || '',
+        city: exifAddress?.city || authorityInfo?.address?.city || authorityInfo?.address?.town || '',
+        area: exifAddress?.area || authorityInfo?.address?.village || authorityInfo?.address?.suburb || '',
         authorityType: authorityInfo?.authorityType || 'municipal_corporation',
         authorityBody: authorityInfo?.authorityBody || '',
+        locationSource: locationSource || 'BROWSER_GPS',
         translatedLetter: translatedLetter || '',
         translatedLanguage: selectedLanguage !== 'en' ? selectedLanguage : '',
         // Pass validation data to backend
@@ -790,7 +888,25 @@ const Submit = () => {
               {/* Left Column: Metadata & Map */}
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center space-x-2 uppercase tracking-wider">
+                  {/* EXIF Location Detection Badge */}
+                  <LocationDetector
+                    status={exifStatus}
+                    source={exifSource}
+                    address={exifAddress}
+                    onManualSelect={() => {
+                      // Reset to browser location
+                      if (location.lat && location.lng) {
+                        setMapCenter({ lat: location.lat, lng: location.lng });
+                        setMarkerPos({ lat: location.lat, lng: location.lng });
+                        handleDetectAuthority(location.lat, location.lng);
+                      }
+                      setExifStatus('not_found');
+                      setLocationSource('MANUAL');
+                      toast('📍 Drag the marker to set location manually', { icon: '👆' });
+                    }}
+                  />
+
+                  <label className="block text-sm font-semibold text-gray-400 mb-2 mt-4 flex items-center space-x-2 uppercase tracking-wider">
                     <MapPin className="w-4 h-4 text-blue-400" />
                     <span>Exact Location</span>
                   </label>

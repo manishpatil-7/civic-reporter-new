@@ -103,6 +103,7 @@ router.post("/", async (req, res) => {
       area,
       authorityType,
       authorityBody,
+      locationSource,
     } = req.body;
 
     // ✅ SAFE USER (no crash)
@@ -204,6 +205,7 @@ router.post("/", async (req, res) => {
       area: area || "",
       authorityType: authorityType || "municipal_corporation",
       authorityBody: authorityBody || "",
+      locationSource: locationSource || "",
       imageValidation: imageValidation || {},
       categoryMatch: categoryMatch || {},
       locationVerified,
@@ -358,6 +360,41 @@ router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
                             </tr>
                           </table>
                           
+                          ${complaint.afterImageUrl ? `
+                          <!-- Resolution Evidence -->
+                          <table role="presentation" style="width: 100%; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 0;">
+                                <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px;">📸 Resolution Evidence</h3>
+                                <table role="presentation" style="width: 100%;">
+                                  <tr>
+                                    ${complaint.imageUrl ? `
+                                    <td style="width: 48%; vertical-align: top; padding-right: 2%;">
+                                      <p style="color: #64748b; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">Before (Reported)</p>
+                                      <img src="${complaint.imageUrl}" alt="Before" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" />
+                                    </td>
+                                    ` : ''}
+                                    <td style="width: ${complaint.imageUrl ? '48%' : '100%'}; vertical-align: top; ${complaint.imageUrl ? 'padding-left: 2%;' : ''}">
+                                      <p style="color: #22c55e; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">✅ After (Resolved)</p>
+                                      <img src="${complaint.afterImageUrl}" alt="After" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #22c55e;" />
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                          ` : (complaint.imageUrl ? `
+                          <!-- Original Complaint Image -->
+                          <table role="presentation" style="width: 100%; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 0;">
+                                <p style="color: #64748b; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">Reported Issue</p>
+                                <img src="${complaint.imageUrl}" alt="Issue" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" />
+                              </td>
+                            </tr>
+                          </table>
+                          ` : '')}
+
                           <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 25px 0;">
                             Thank you for bringing this issue to our attention. Your active participation helps us build a better community for everyone.
                           </p>
@@ -460,6 +497,42 @@ router.post("/:id/send-email", authMiddleware, adminMiddleware, async (req, res)
                         </td></tr>
                       </table>
                       ${customMessage ? `<p style="color: #555; font-size: 15px; line-height: 1.6; margin: 25px 0; background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;"><strong>Admin Message:</strong> ${customMessage}</p>` : ''}
+                      
+                      ${complaint.afterImageUrl ? `
+                      <!-- Resolution Evidence -->
+                      <table role="presentation" style="width: 100%; margin: 25px 0;">
+                        <tr>
+                          <td style="padding: 0;">
+                            <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px;">📸 Resolution Evidence</h3>
+                            <table role="presentation" style="width: 100%;">
+                              <tr>
+                                ${complaint.imageUrl ? `
+                                <td style="width: 48%; vertical-align: top; padding-right: 2%;">
+                                  <p style="color: #64748b; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">Before (Reported)</p>
+                                  <img src="${complaint.imageUrl}" alt="Before" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" />
+                                </td>
+                                ` : ''}
+                                <td style="width: ${complaint.imageUrl ? '48%' : '100%'}; vertical-align: top; ${complaint.imageUrl ? 'padding-left: 2%;' : ''}">
+                                  <p style="color: #22c55e; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">✅ After (Resolved)</p>
+                                  <img src="${complaint.afterImageUrl}" alt="After" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #22c55e;" />
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      ` : (complaint.imageUrl ? `
+                      <!-- Original Complaint Image -->
+                      <table role="presentation" style="width: 100%; margin: 25px 0;">
+                        <tr>
+                          <td style="padding: 0;">
+                            <p style="color: #64748b; font-size: 12px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;">Reported Issue</p>
+                            <img src="${complaint.imageUrl}" alt="Issue" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" />
+                          </td>
+                        </tr>
+                      </table>
+                      ` : '')}
+
                       <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 25px 0;">Thank you for bringing this issue to our attention. Your active participation helps us build a better community.</p>
                     </td>
                   </tr>

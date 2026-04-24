@@ -11,27 +11,41 @@ const router = express.Router();
 // Google Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Model configuration with safety settings
-const modelConfig = {
-  model: "gemini-2.5-flash",  // Using experimental model
+// Safety settings shared by all models
+const safetySettings = [
+  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+];
+
+// Model configuration for JSON outputs (analyze, validate-category)
+const jsonModelConfig = {
+  model: "gemini-2.5-flash",
   generationConfig: {
     temperature: 0.2,
     maxOutputTokens: 2048,
     responseMimeType: "application/json",
   },
-  safetySettings: [
-    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-  ],
+  safetySettings,
 };
 
-let visionModel, textModel;
+// Model configuration for plain text outputs (translation)
+const textModelConfig = {
+  model: "gemini-2.5-flash",
+  generationConfig: {
+    temperature: 0.2,
+    maxOutputTokens: 4096,
+  },
+  safetySettings,
+};
+
+let visionModel, textModel, translationModel;
 try {
-  visionModel = genAI.getGenerativeModel(modelConfig);
-  textModel = genAI.getGenerativeModel(modelConfig);
-  console.log("✅ Gemini models initialized");
+  visionModel = genAI.getGenerativeModel(jsonModelConfig);
+  textModel = genAI.getGenerativeModel(jsonModelConfig);
+  translationModel = genAI.getGenerativeModel(textModelConfig);
+  console.log("✅ Gemini models initialized (JSON + Text)");
 } catch (err) {
   console.error("❌ Failed to initialize Gemini models:", err.message);
 }
@@ -159,6 +173,10 @@ ${nameInsert}
 ${locationInsert}
 ${authorityInsert}
 
+IMPORTANT DATE AND LOCATION RULES:
+- You MUST include the date "${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}" in the formal letter. Place it at the top-right of the letter before the "To," line like: "Date: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}".
+- ${locationAddress ? `You MUST mention the city/location "${locationAddress}" in the letter body where describing the issue location.` : 'If no location is provided, write "[Location]" as placeholder.'}
+
 Return ONLY valid JSON (no markdown, no backticks):
 {
   "imageValidation": {
@@ -170,7 +188,7 @@ Return ONLY valid JSON (no markdown, no backticks):
   "severity": "<low|medium|high>",
   "confidence": <0-100>,
   "description": "<2-3 line description>",
-  "formalLetter": "<formal complaint letter if valid, otherwise empty string>${authorityInfo ? ` addressed using the EXACT authority header provided above` : " to the local authority"}${userName ? `, starting with 'I, ${userName}, ...'` : ""}${locationAddress ? `, mentioning the location '${locationAddress}'` : ""}. Include Subject line, date, and closing with 'Yours faithfully'.>"
+  "formalLetter": "<formal complaint letter if valid, otherwise empty string>${authorityInfo ? ` addressed using the EXACT authority header provided above` : " to the local authority"}${userName ? `, starting with 'I, ${userName}, ...'` : ""}${locationAddress ? `, mentioning the location '${locationAddress}'` : ""}. Include Subject line, date (${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}), and closing with 'Yours faithfully'.>"
 }
 
 CRITICAL: If the image is INVALID (selfie, food, laptop, etc.), set imageValidation.isValid = false and set problemType = "None", confidence = 0, formalLetter = "".
@@ -289,6 +307,31 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
 
     const priority = severityScore * 10;
 
+    // --- Post-process formalLetter to ensure correct date and city ---
+    let finalLetter = parsed.formalLetter || "";
+    if (finalLetter) {
+      const todayDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+      
+      // Fix date: replace any incorrect/placeholder dates with today's date
+      // Common AI date patterns: "Date: ...", "Dated: ...", just a date line at the top
+      finalLetter = finalLetter.replace(
+        /Date[d]?\s*[:.]\s*\[?[\w\s,\/\.\-]*\]?/gi,
+        `Date: ${todayDate}`
+      );
+      
+      // If no "Date:" line exists at all, prepend it
+      if (!/Date\s*:/i.test(finalLetter)) {
+        finalLetter = `Date: ${todayDate}\n\n${finalLetter}`;
+      }
+      
+      // Fix city/location: if location was provided but letter has placeholder or missing location
+      if (locationAddress) {
+        finalLetter = finalLetter.replace(/\[Location\]/gi, locationAddress);
+        finalLetter = finalLetter.replace(/\[City\]/gi, locationAddress);
+        finalLetter = finalLetter.replace(/\[Address\]/gi, locationAddress);
+      }
+    }
+
     const previewData = {
       imageUrl,
       problemType: parsed.problemType,
@@ -299,7 +342,7 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
           ? "High"
           : "Medium",
       description: parsed.description,
-      formalLetter: parsed.formalLetter,
+      formalLetter: finalLetter,
       priority,
       confidence: parsed.confidence,
       imageValidation,
@@ -402,11 +445,16 @@ router.post("/translate", async (req, res) => {
     let translatedText;
     let lastError;
     
+    // Use translationModel (plain text output) instead of textModel (JSON output)
+    if (!translationModel) {
+      return res.status(500).json({ message: "Translation model not available" });
+    }
+
     for (let i = 0; i < 3; i++) {
       try {
         console.log(`Translation attempt ${i + 1}/3...`);
         
-        const result = await textModel.generateContent({
+        const result = await translationModel.generateContent({
           contents: [{
             role: "user",
             parts: [{
@@ -419,6 +467,7 @@ IMPORTANT RULES:
 - Keep proper names (person names, place names) as-is but also add transliterated version in parentheses if helpful
 - Use formal/respectful language appropriate for official government correspondence
 - Do NOT add any extra text, explanation, or notes — return ONLY the translated letter
+- Do NOT wrap the output in JSON, markdown, or code blocks — return plain translated text only
 
 Letter to translate:
 ${text}`
@@ -427,7 +476,12 @@ ${text}`
         });
         
         const response = await result.response;
-        translatedText = response.text().trim();
+        let rawTranslation = response.text().trim();
+        
+        // Clean any accidental markdown/code fences the model may add
+        rawTranslation = rawTranslation.replace(/^```[\w]*\n?/gm, '').replace(/```$/gm, '').trim();
+        
+        translatedText = rawTranslation;
         console.log("✅ Translation Success");
         break;
       } catch (err) {

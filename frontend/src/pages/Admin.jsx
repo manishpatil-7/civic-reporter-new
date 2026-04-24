@@ -4,7 +4,8 @@ import {
   ShieldCheck, CheckCircle2, Clock, AlertTriangle, MapPin, 
   User, X, Users, Trash2, Shield, UserPlus, Check, XCircle, 
   BarChart3, Map, HelpCircle, Download, FileText, Sparkles,
-  TrendingUp, Activity, Filter, Search, ChevronDown, MoreHorizontal, Mail, Copy
+  TrendingUp, Activity, Filter, Search, ChevronDown, MoreHorizontal, Mail, Copy,
+  Camera, UploadCloud, Image as ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +29,8 @@ import {
   approveAdminRequest,
   rejectAdminRequest,
   sendComplaintEmail,
-  updateUserReputation
+  updateUserReputation,
+  uploadImage
 } from '../services/api';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
@@ -133,6 +135,13 @@ const Admin = () => {
   // PDF Reference
   const pdfRef = useRef();
   const [printingComplaint, setPrintingComplaint] = useState(null);
+
+  // Resolve image upload state
+  const [resolveFile, setResolveFile] = useState(null);
+  const [resolvePreview, setResolvePreview] = useState(null);
+  const [resolveUploading, setResolveUploading] = useState(false);
+  const resolveInputRef = useRef(null);
+  const resolveCameraRef = useRef(null);
   const [copiedId, setCopiedId] = useState(null);
 
   const severityValue = { High: 3, Medium: 2, Low: 1 };
@@ -194,6 +203,8 @@ const Admin = () => {
       setModalTarget({ id, currentStatus, newStatus });
       setModalType('resolve');
       setModalInput('');
+      setResolveFile(null);
+      setResolvePreview(null);
       setModalOpen(true);
       return;
     }
@@ -207,15 +218,38 @@ const Admin = () => {
     }
   };
 
+  const handleResolveFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    setResolveFile(file);
+    setResolvePreview(URL.createObjectURL(file));
+  };
+
   const submitModal = async () => {
     if (!modalTarget) return;
     try {
       if (modalType === 'resolve') {
+        let afterImageUrl = '';
+        if (resolveFile) {
+          setResolveUploading(true);
+          toast.loading('Uploading evidence image...', { id: 'resolve-upload' });
+          try {
+            const uploadRes = await uploadImage(resolveFile);
+            afterImageUrl = uploadRes.data.imageUrl;
+            toast.success('Image uploaded!', { id: 'resolve-upload' });
+          } catch (uploadErr) {
+            toast.error('Image upload failed. Resolving without image.', { id: 'resolve-upload' });
+          } finally {
+            setResolveUploading(false);
+          }
+        }
         await updateComplaint(modalTarget.id, {
           status: 'Resolved',
-          afterImageUrl: modalInput || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80',
+          afterImageUrl: afterImageUrl || '',
         });
         toast.success('Issue marked as Resolved ✅');
+        setResolveFile(null);
+        setResolvePreview(null);
       } else if (modalType === 'verification') {
         await updateComplaint(modalTarget.id, {
           verificationStatus: modalTarget.newVerification,
@@ -1046,8 +1080,65 @@ const Admin = () => {
 
               {modalType === 'resolve' && (
                 <>
-                  <p className="text-sm text-gray-400">Provide an image URL showing the resolved issue as evidence.</p>
-                  <input type="url" value={modalInput} onChange={(e) => setModalInput(e.target.value)} placeholder="https://example.com/resolved-image.jpg" className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500" />
+                  <p className="text-sm text-gray-400">Upload or capture a photo showing the resolved issue as evidence.</p>
+                  
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={resolveInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleResolveFileChange}
+                    className="hidden"
+                  />
+                  <input
+                    ref={resolveCameraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleResolveFileChange}
+                    className="hidden"
+                  />
+
+                  {resolvePreview ? (
+                    <div className="relative w-full rounded-xl overflow-hidden border border-white/10 group">
+                      <img src={resolvePreview} alt="Evidence" className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => { setResolveFile(null); setResolvePreview(null); }}
+                          className="bg-red-500/90 text-white p-3 rounded-full hover:bg-red-500 transition-all shadow-lg"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-green-500/80 backdrop-blur text-[10px] font-bold rounded text-white flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Evidence Ready
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4">
+                      <div
+                        onClick={() => resolveInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-white/15 hover:border-blue-400/50 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-white/5 group"
+                      >
+                        <div className="p-3 bg-blue-500/10 rounded-full mb-3 group-hover:bg-blue-500/20 transition-colors">
+                          <UploadCloud className="w-8 h-8 text-blue-400" />
+                        </div>
+                        <p className="text-sm text-gray-300 font-medium">Click to browse files</p>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB</p>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => resolveCameraRef.current?.click()}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-blue-300 rounded-xl border border-blue-500/30 hover:from-blue-600/30 hover:to-purple-600/30 transition-all font-semibold text-sm"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>Take Photo with Camera</span>
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
               
@@ -1086,8 +1177,12 @@ const Admin = () => {
                   <button onClick={() => setModalOpen(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all">Cancel</button>
                 )}
                 {modalType !== 'letter' ? (
-                  <button onClick={submitModal} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all">
-                    Confirm
+                  <button 
+                    onClick={submitModal} 
+                    disabled={resolveUploading}
+                    className={`flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all ${resolveUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {resolveUploading ? 'Uploading...' : 'Confirm'}
                   </button>
                 ) : (
                   <button onClick={() => setModalOpen(false)} className="w-full py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all">

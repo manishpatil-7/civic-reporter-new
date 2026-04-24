@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 const data = {
   name: "Manish Patil",
-  email: "patilmanish6332@gmail.com",
+  email: "patilmanish113607@gmail.com",
   password: "Manish@123",
   role: "SUPER_ADMIN", // I will give you Super Admin role
   state: "Maharashtra",

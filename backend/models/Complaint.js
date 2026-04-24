@@ -97,6 +97,11 @@ const complaintSchema = new mongoose.Schema({
   district: { type: String },
   city: { type: String },
   area: { type: String },
+  locationSource: {
+    type: String,
+    enum: ["EXIF_GPS", "PLUS_CODE", "ADDRESS_STRING", "MANUAL", "BROWSER_GPS", ""],
+    default: "",
+  },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Authority' },
   escalatedAt: { type: Date },
   resolvedAt: { type: Date },
