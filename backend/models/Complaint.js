@@ -90,9 +90,16 @@ const complaintSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["Pending", "In Progress", "Resolved"],
-    default: "Pending"
+    enum: ["Pending", "In Progress", "Resolved", "OPEN", "IN_PROGRESS", "ESCALATED"],
+    default: "OPEN"
   },
+  state: { type: String },
+  district: { type: String },
+  city: { type: String },
+  area: { type: String },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Authority' },
+  escalatedAt: { type: Date },
+  resolvedAt: { type: Date },
 
   upvotes: {
     type: Number,

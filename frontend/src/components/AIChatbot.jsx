@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Sparkles, Loader2, Trash2, ChevronDown, Mic, MicOff, Volume2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AIChatbot = () => {
+  const { isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { 
@@ -161,6 +163,8 @@ const AIChatbot = () => {
       timestamp: new Date()
     }]);
   };
+
+  if (isAdmin) return null;
 
   return (
     <>

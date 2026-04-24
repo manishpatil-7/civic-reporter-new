@@ -11,6 +11,9 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import MyComplaints from './pages/MyComplaints';
+import AuthorityLogin from './pages/authority/Login';
+import AuthorityDashboard from './pages/authority/Dashboard';
+import AuthorityComplaintDetail from './pages/authority/ComplaintDetail';
 // FAB removed — report buttons already exist in Navbar and Dashboard
 import EnhancedBackground from './components/EnhancedBackground';
 import CursorEffect from './components/CursorEffect';

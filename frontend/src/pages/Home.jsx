@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Map, FileText, Camera, Sparkles, Zap, Shield, Activity } from 'lucide-react';
 import TiltCard from '../components/TiltCard';
 import MagneticButton from '../components/MagneticButton';
+import { useAuth } from '../context/AuthContext';
 
 // Typewriter Effect Hook
 const useTypewriter = (text, speed = 50, delay = 0) => {
@@ -68,6 +69,7 @@ const ParallaxSection = ({ children, offset = 50 }) => {
 };
 
 const Home = () => {
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -208,26 +210,28 @@ const Home = () => {
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
           >
-            <MagneticButton strength={0.2}>
-              <motion.button
-                onClick={() => navigate('/submit')}
-                className="relative group px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 text-white font-bold rounded-2xl overflow-hidden"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-500 to-blue-600"
-                  initial={{ x: '100%' }}
-                  whileHover={{ x: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-                <span className="relative flex items-center gap-3">
-                  <Camera className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  <span>Report an Issue</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </motion.button>
-            </MagneticButton>
+            {!isAdmin && (
+              <MagneticButton strength={0.2}>
+                <motion.button
+                  onClick={() => navigate('/submit')}
+                  className="relative group px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 text-white font-bold rounded-2xl overflow-hidden"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-500 to-blue-600"
+                    initial={{ x: '100%' }}
+                    whileHover={{ x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  <span className="relative flex items-center gap-3">
+                    <Camera className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <span>Report an Issue</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </motion.button>
+              </MagneticButton>
+            )}
 
             <MagneticButton strength={0.15}>
               <motion.button

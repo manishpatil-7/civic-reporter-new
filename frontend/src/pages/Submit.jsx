@@ -296,6 +296,10 @@ const Submit = () => {
           lng: markerPos?.lng || location.lng || 0,
           address: authorityInfo?.displayAddress || location.address || 'User Specified Location',
         },
+        state: authorityInfo?.address?.state || '',
+        district: authorityInfo?.address?.district || '',
+        city: authorityInfo?.address?.city || authorityInfo?.address?.town || '',
+        area: authorityInfo?.address?.village || authorityInfo?.address?.suburb || '',
         authorityType: authorityInfo?.authorityType || 'municipal_corporation',
         authorityBody: authorityInfo?.authorityBody || '',
         translatedLetter: translatedLetter || '',
@@ -1068,22 +1072,33 @@ const Submit = () => {
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
                 <span className="text-gray-400 font-medium">Complaint ID</span>
-                <button 
-                  onClick={() => {
-                    copyToClipboard(submittedId);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="flex items-center space-x-2 text-white font-bold tracking-wider font-mono bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 px-3 py-1.5 rounded-lg border border-white/10 transition-all cursor-pointer group"
-                  title="Copy ID"
-                >
-                  <span>#{submittedId}</span>
-                  {copied ? (
-                    <Check className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
-                  )}
-                </button>
+                <div className="flex items-center bg-[#0f172a] border border-white/10 rounded-lg overflow-hidden shadow-inner">
+                  <div className="px-4 py-2 font-mono font-bold text-white tracking-wider select-all">
+                    #{submittedId}
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      try {
+                        copyToClipboard(submittedId);
+                        toast.success('Complaint ID copied to clipboard!', { position: 'bottom-center' });
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch (err) {
+                        console.error('Failed to copy', err);
+                        toast.error('Failed to copy. Please select the text manually.');
+                      }
+                    }}
+                    className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/40 transition-colors flex items-center justify-center border-l border-white/10 cursor-pointer"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-blue-400" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex items-start space-x-3 text-sm">
                 <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />

@@ -124,19 +124,21 @@ const Navbar = () => {
             </>
           )}
 
-          <NavLink
-            to="/submit"
-            className={({ isActive }) =>
-              `flex items-center space-x-1.5 px-4 py-2 rounded-xl transition-all shadow-lg ${
-                isActive
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-purple-500/25'
-                  : 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white'
-              }`
-            }
-          >
-            <Camera className="w-4 h-4" />
-            <span className="font-medium">Report Issue</span>
-          </NavLink>
+          {!isAdmin && (
+            <NavLink
+              to="/submit"
+              className={({ isActive }) =>
+                `flex items-center space-x-1.5 px-4 py-2 rounded-xl transition-all shadow-lg ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-purple-500/25'
+                    : 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              <Camera className="w-4 h-4" />
+              <span className="font-medium">Report Issue</span>
+            </NavLink>
+          )}
 
           <div className="w-px h-6 bg-white/10 mx-1" />
 
@@ -268,9 +270,11 @@ const Navbar = () => {
             <NavLink to="/dashboard" className={navLinkClass} onClick={closeMobile}>
               <Map className="w-4 h-4" /><span>Dashboard</span>
             </NavLink>
-            <NavLink to="/submit" className={navLinkClass} onClick={closeMobile}>
-              <Camera className="w-4 h-4" /><span>Report Issue</span>
-            </NavLink>
+            {!isAdmin && (
+              <NavLink to="/submit" className={navLinkClass} onClick={closeMobile}>
+                <Camera className="w-4 h-4" /><span>Report Issue</span>
+              </NavLink>
+            )}
             {user && (
               <NavLink to="/my-complaints" className={navLinkClass} onClick={closeMobile}>
                 <FileText className="w-4 h-4" /><span>My Complaints</span>

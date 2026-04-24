@@ -54,6 +54,21 @@ const useUserLocation = () => {
       const addr = await reverseGeocode(latitude, longitude);
       setAddress(addr);
     } catch (err) {
+      // Fallback to IP location if GPS fails
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipData = await ipRes.json();
+        if (ipData && ipData.latitude && ipData.longitude) {
+          setLat(ipData.latitude);
+          setLng(ipData.longitude);
+          const addr = await reverseGeocode(ipData.latitude, ipData.longitude);
+          setAddress(addr);
+          return;
+        }
+      } catch (ipErr) {
+        console.error('IP location fallback failed', ipErr);
+      }
+
       const messages = {
         1: 'Location permission denied. Please enable location access.',
         2: 'Location unavailable. Please try again.',

@@ -1,4 +1,9 @@
 import express from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import Authority from "../models/Authority.js";
+import Complaint from "../models/Complaint.js";
+import { protectAuthority } from "../middleware/authMiddleware.js";
 import {
   municipalCorporations,
   municipalCouncils,
@@ -334,6 +339,181 @@ router.post("/detect", async (req, res) => {
   } catch (error) {
     console.error("Authority detection error:", error.message);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// ===================================================
+// AUTHORITY LOCATION BINDING ROUTES
+// ===================================================
+
+// 1. POST /register (Super Admin only)
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, password, role, state, district, city, area } = req.body;
+    
+    if (role === "VILLAGE_ADMIN" && !area) {
+      return res.status(400).json({ message: "Area is required for VILLAGE_ADMIN" });
+    }
+
+    const existing = await Authority.findOne({ email });
+    if (existing) return res.status(400).json({ message: "Email already in use" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAuthority = new Authority({
+      name, email, password: hashedPassword, role, state, district, city, area
+    });
+
+    await newAuthority.save();
+    res.status(201).json({ message: "Authority registered successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 2. POST /login
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const authority = await Authority.findOne({ email });
+    if (!authority) return res.status(401).json({ message: "Invalid credentials" });
+
+    const isMatch = await bcrypt.compare(password, authority.password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign(
+      { 
+        id: authority._id, 
+        role: authority.role,
+        state: authority.state,
+        district: authority.district,
+        city: authority.city,
+        area: authority.area
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token, authority: { name: authority.name, role: authority.role, email: authority.email } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 3. GET /complaints
+router.get("/complaints", protectAuthority, async (req, res) => {
+  try {
+    const auth = req.authority;
+    const { status, authorityType, page = 1, limit = 10 } = req.query;
+
+    let filter = {};
+    if (auth.role === "SUPER_ADMIN") {
+      filter = {}; // SUPER_ADMIN can see everything
+    } else if (auth.role === "CITY_ADMIN") {
+      filter = { 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city,
+        authorityType: { $in: ["municipal_corporation", "municipal_council"] }
+      };
+    } else if (auth.role === "VILLAGE_ADMIN") {
+      filter = { 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city, 
+        area: auth.area,
+        authorityType: "gram_panchayat"
+      };
+    }
+
+    if (status) filter.status = status;
+    if (authorityType) filter.authorityType = authorityType;
+
+    const complaints = await Complaint.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    res.json(complaints);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 4. PATCH /complaints/:id/status
+router.patch("/complaints/:id/status", protectAuthority, async (req, res) => {
+  try {
+    const auth = req.authority;
+    const { status } = req.body; // "IN_PROGRESS", "RESOLVED"
+
+    let filter = { _id: req.params.id };
+    if (auth.role === "CITY_ADMIN") {
+      filter = { 
+        ...filter, 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city,
+        authorityType: { $in: ["municipal_corporation", "municipal_council"] }
+      };
+    } else if (auth.role === "VILLAGE_ADMIN") {
+      filter = { 
+        ...filter, 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city, 
+        area: auth.area,
+        authorityType: "gram_panchayat"
+      };
+    }
+
+    const complaint = await Complaint.findOne(filter);
+    if (!complaint) return res.status(403).json({ message: "Complaint not found or out of jurisdiction" });
+
+    complaint.status = status;
+    if (status === "RESOLVED") complaint.resolvedAt = new Date();
+    
+    await complaint.save();
+    res.json({ message: "Status updated", complaint });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 5. GET /dashboard/stats
+router.get("/dashboard/stats", protectAuthority, async (req, res) => {
+  try {
+    const auth = req.authority;
+    let filter = {};
+    if (auth.role === "SUPER_ADMIN") {
+      filter = {};
+    } else if (auth.role === "CITY_ADMIN") {
+      filter = { 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city,
+        authorityType: { $in: ["municipal_corporation", "municipal_council"] }
+      };
+    } else if (auth.role === "VILLAGE_ADMIN") {
+      filter = { 
+        state: auth.state, 
+        district: auth.district, 
+        city: auth.city, 
+        area: auth.area,
+        authorityType: "gram_panchayat"
+      };
+    }
+
+    const complaints = await Complaint.find(filter);
+    
+    const stats = {
+      total: complaints.length,
+      open: complaints.filter(c => c.status === "OPEN" || c.status === "Pending").length,
+      inProgress: complaints.filter(c => c.status === "IN_PROGRESS" || c.status === "In Progress").length,
+      resolved: complaints.filter(c => c.status === "RESOLVED" || c.status === "Resolved").length,
+    };
+
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

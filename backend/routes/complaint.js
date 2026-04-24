@@ -97,6 +97,12 @@ router.post("/", async (req, res) => {
       imageValidation,
       categoryMatch,
       userLocation, // user's actual GPS position
+      state,
+      district,
+      city,
+      area,
+      authorityType,
+      authorityBody,
     } = req.body;
 
     // ✅ SAFE USER (no crash)
@@ -192,6 +198,12 @@ router.post("/", async (req, res) => {
       userEmail: userEmail || req.user?.email || "",
       department: department || "General Municipal Department",
       location: locationData,
+      state: state || "",
+      district: district || "",
+      city: city || "",
+      area: area || "",
+      authorityType: authorityType || "municipal_corporation",
+      authorityBody: authorityBody || "",
       imageValidation: imageValidation || {},
       categoryMatch: categoryMatch || {},
       locationVerified,

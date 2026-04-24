@@ -96,11 +96,12 @@ router.post("/analyze", async (req, res) => {
     // Authority-aware letter generation
     let authorityInsert = "";
     if (authorityInfo) {
+      const escapedHeader = authorityInfo.letterHeader ? authorityInfo.letterHeader.replace(/\n/g, '\\\\n') : '';
       authorityInsert = `
 IMPORTANT — AUTHORITY ADDRESSING:
 The complaint letter MUST be addressed to the correct authority. Use this EXACT header at the start of the formalLetter:
 
-"${authorityInfo.letterHeader}"
+"${escapedHeader}"
 
 Do NOT use "Municipal Commissioner" or "Municipal Corporation" unless specifically indicated above.
 The authority type is: ${authorityInfo.authorityType}.
