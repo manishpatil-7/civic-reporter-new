@@ -166,7 +166,7 @@ const Dashboard = () => {
         
         {/* Filter Pills with Animation */}
         <motion.div 
-          className="flex space-x-2 bg-white/5 p-1.5 rounded-2xl border border-white/10"
+          className="flex flex-wrap gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}

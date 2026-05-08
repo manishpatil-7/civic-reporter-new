@@ -104,6 +104,7 @@ router.post("/", async (req, res) => {
       authorityType,
       authorityBody,
       locationSource,
+      embedding, // AI-generated vector for duplicate detection
     } = req.body;
 
     // ✅ SAFE USER (no crash)
@@ -213,6 +214,8 @@ router.post("/", async (req, res) => {
       spamStatus,
       flagReason,
       verificationStatus: spamStatus === "flagged" ? "Suspicious" : "Pending",
+      // Store the embedding if provided (from duplicate check step)
+      ...(embedding && embedding.length > 0 ? { embedding } : {}),
     });
 
     // ✅ SAVE

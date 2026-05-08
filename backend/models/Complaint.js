@@ -175,6 +175,13 @@ const complaintSchema = new mongoose.Schema({
     default: "clean",
   },
 
+  // AI-generated text embedding vector for duplicate detection
+  embedding: {
+    type: [Number],
+    default: [],
+    select: false, // Exclude from default queries (large array) — fetch explicitly when needed
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,

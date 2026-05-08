@@ -179,7 +179,7 @@ const Home = () => {
 
           {/* Main Heading with Typewriter */}
           <motion.div variants={itemVariants} className="mb-6">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight">
               <span className="block mb-2">{titleText}</span>
               <span className="block text-gradient relative inline-block">
                 {subtitleText}
@@ -421,37 +421,37 @@ const Home = () => {
             </div>
 
             {/* Animated Tech Visualization */}
-            <div className="relative h-80 md:h-96">
+            <div className="relative h-64 md:h-96 w-full flex items-center justify-center mt-8 md:mt-0">
               <FloatingElement delay={0} duration={8}>
                 <motion.div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl border border-white/10 backdrop-blur-sm"
-                  style={{ transform: 'translate(-50%, -50%) rotateY(15deg) rotateX(-10deg)' }}
+                  className="w-48 h-48 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl border border-white/10 backdrop-blur-sm flex items-center justify-center relative z-10"
+                  style={{ transform: 'rotateY(15deg) rotateX(-10deg)' }}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Activity className="w-16 h-16 text-blue-400" />
-                  </div>
+                  <Activity className="w-16 h-16 text-blue-400" />
                 </motion.div>
               </FloatingElement>
 
               {/* Orbiting Elements */}
-              {[0, 120, 240].map((deg, i) => (
-                <motion.div
-                  key={deg}
-                  className="absolute top-1/2 left-1/2 w-4 h-4 bg-blue-400 rounded-full"
-                  animate={{
-                    x: [0, Math.cos((deg * Math.PI) / 180) * 120, 0],
-                    y: [0, Math.sin((deg * Math.PI) / 180) * 120, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    delay: i * 0.3,
-                    ease: "linear"
-                  }}
-                  style={{ translateX: '-50%', translateY: '-50%' }}
-                />
-              ))}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
+                {[0, 120, 240].map((deg, i) => (
+                  <motion.div
+                    key={deg}
+                    className="absolute w-4 h-4 bg-blue-400 rounded-full"
+                    animate={{
+                      x: [0, Math.cos((deg * Math.PI) / 180) * 120, 0],
+                      y: [0, Math.sin((deg * Math.PI) / 180) * 120, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: i * 0.3,
+                      ease: "linear"
+                    }}
+                    style={{ translateX: '-50%', translateY: '-50%' }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>

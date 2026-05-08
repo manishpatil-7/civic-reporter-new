@@ -127,13 +127,13 @@ const Navbar = () => {
           {!isAdmin && (
             <NavLink
               to="/submit"
-              className={({ isActive }) =>
-                `flex items-center space-x-1.5 px-4 py-2 rounded-xl transition-all shadow-lg ${
-                  isActive
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-purple-500/25'
-                    : 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white'
-                }`
-              }
+              onClick={(e) => {
+                if (window.location.pathname === '/submit') {
+                  e.preventDefault();
+                  window.location.reload();
+                }
+              }}
+              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl transition-all shadow-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5"
             >
               <Camera className="w-4 h-4" />
               <span className="font-medium">Report Issue</span>
@@ -271,7 +271,17 @@ const Navbar = () => {
               <Map className="w-4 h-4" /><span>Dashboard</span>
             </NavLink>
             {!isAdmin && (
-              <NavLink to="/submit" className={navLinkClass} onClick={closeMobile}>
+              <NavLink 
+                to="/submit" 
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
+                onClick={(e) => {
+                  if (window.location.pathname === '/submit') {
+                    e.preventDefault();
+                    window.location.reload();
+                  }
+                  closeMobile();
+                }}
+              >
                 <Camera className="w-4 h-4" /><span>Report Issue</span>
               </NavLink>
             )}

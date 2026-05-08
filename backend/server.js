@@ -11,6 +11,7 @@ import userRoutes from "./routes/users.js";
 import notificationRoutes from "./routes/notification.js";
 import otpRoutes from "./routes/otp.js";
 import locationRoutes from "./routes/location.js";
+import duplicateRoutes from "./routes/duplicate.js";
 
 // Load env first
 dotenv.config();
@@ -36,6 +37,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/duplicates", duplicateRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Backend is running...");

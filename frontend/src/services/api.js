@@ -39,10 +39,16 @@ export const analyzeImage = async (file, { userName = '', locationAddress = '', 
   return { data: { ...aiRes.data, imageUrl } };
 };
 
-// Duplicate check
-export const checkDuplicate = async (problemType, location) => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  return { data: { isDuplicate: false } };
+// AI-based duplicate detection — uses semantic similarity via embeddings
+export const checkDuplicate = async (problemType, description, locationData = {}) => {
+  return api.post('/duplicates/check', {
+    problemType,
+    description,
+    state: locationData.state || '',
+    district: locationData.district || '',
+    city: locationData.city || '',
+    area: locationData.area || '',
+  });
 };
 
 // Complaints CRUD

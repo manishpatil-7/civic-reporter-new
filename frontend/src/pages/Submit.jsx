@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import UploadBox from '../components/UploadBox';
 import Loader from '../components/Loader';
 import LocationDetector from '../components/LocationDetector';
+import DuplicateModal from '../components/DuplicateModal';
 import { analyzeImage, createComplaint, checkDuplicate, detectAuthority, translateLetter, checkCanSubmit, extractLocationFromImage, reverseGeocodeLocation } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import useUserLocation from '../hooks/useLocation';
@@ -53,6 +54,9 @@ const Submit = () => {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateResults, setDuplicateResults] = useState([]);
+  const [complaintEmbedding, setComplaintEmbedding] = useState(null);
   const [formData, setFormData] = useState({
     problemType: '',
     severity: 'Medium',
@@ -316,7 +320,17 @@ const Submit = () => {
       }
       setImageValidation(data.imageValidation);
 
-      if (
+      // Show toast if AI returned a fallback response (API quota/key issue)
+      if (data.aiFallback) {
+        toast('⚠️ AI analysis temporarily unavailable. A template complaint has been generated — please review and edit.', { icon: '🤖', duration: 6000 });
+        setFormData({
+          problemType: data.problemType || 'other',
+          severity: data.severity || 'Medium',
+          formalLetter: data.formalLetter || '',
+          description: data.description || 'AI unavailable — please describe the issue manually',
+          department: getDepartment(data.problemType || 'other'),
+        });
+      } else if (
         data.problemType === "None" ||
         (data.confidence || 0) < 0.5 ||
         !data.problemType
@@ -326,7 +340,7 @@ const Submit = () => {
           problemType: '',
           severity: 'Medium',
           description: data.description || 'Issue reported manually',
-          formalLetter: '',
+          formalLetter: data.formalLetter || '',
           department: 'General Municipal Department',
         });
       } else {
@@ -342,18 +356,36 @@ const Submit = () => {
       // Wait for EXIF to finish before duplicates check (uses the best location)
       await exifPromise.catch(() => {});
 
-      // Check for duplicates
-      const dupeRes = await checkDuplicate(data.problemType, [
-        markerPos?.lat || location.lat || 0,
-        markerPos?.lng || location.lng || 0,
-      ]);
-      
-      if (dupeRes.data.isDuplicate) {
-        setDuplicateWarning({
-          confidence: dupeRes.data.confidence,
-          similarId: dupeRes.data.similarId,
-        });
-      } else {
+      // ✅ AI-based duplicate detection using semantic similarity
+      try {
+        const locationData = {
+          state: exifAddress?.state || authorityInfo?.address?.state || '',
+          district: exifAddress?.district || authorityInfo?.address?.district || '',
+          city: exifAddress?.city || authorityInfo?.address?.city || authorityInfo?.address?.town || '',
+          area: exifAddress?.area || authorityInfo?.address?.village || authorityInfo?.address?.suburb || '',
+        };
+        const dupeRes = await checkDuplicate(
+          data.problemType,
+          data.description || '',
+          locationData
+        );
+        
+        // Store the embedding for later use during submission (avoids recomputation)
+        if (dupeRes.data.embedding) {
+          setComplaintEmbedding(dupeRes.data.embedding);
+        }
+
+        if (dupeRes.data.duplicate && dupeRes.data.similarComplaints?.length > 0) {
+          setDuplicateResults(dupeRes.data.similarComplaints);
+          setDuplicateWarning(true);
+          setShowDuplicateModal(true);
+          // Don't block — user can still proceed from the modal
+        } else {
+          setDuplicateWarning(null);
+          setDuplicateResults([]);
+        }
+      } catch (dupeErr) {
+        console.warn('Duplicate check failed (non-blocking):', dupeErr.message);
         setDuplicateWarning(null);
       }
 
@@ -409,9 +441,12 @@ const Submit = () => {
           lat: location.lat || 0,
           lng: location.lng || 0,
         },
+        // Pass embedding from duplicate check (avoids recomputation)
+        embedding: complaintEmbedding || [],
       };
       const res = await createComplaint(dataToSubmit);
       setSubmittedId(res.data?._id || res.data?.id || 'CMP-10X');
+      setShowDuplicateModal(false);
       setStep(4);
     } catch (err) {
       console.error(err);
@@ -761,22 +796,28 @@ const Submit = () => {
             onSubmit={handleSubmit}
             className="glass-panel p-8 rounded-3xl max-w-4xl mx-auto space-y-8"
           >
-            {duplicateWarning && (
+            {/* Duplicate warning banner — opens the detailed modal */}
+            {duplicateWarning && duplicateResults.length > 0 && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 flex items-start space-x-4 mb-6 shadow-lg shadow-yellow-500/5"
+                className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex items-start space-x-4 mb-6 shadow-lg shadow-amber-500/5 cursor-pointer hover:bg-amber-500/15 transition-all"
+                onClick={() => setShowDuplicateModal(true)}
               >
-                <AlertCircle className="w-7 h-7 text-yellow-400 shrink-0 mt-0.5 animate-pulse" />
-                <div>
-                  <h4 className="text-lg font-bold text-yellow-400">⚠️ Similar issue already reported ({duplicateWarning.confidence}% visual match)</h4>
-                  <p className="text-sm text-yellow-200 mt-1">
-                    It looks like someone has already reported something similar here.
+                <AlertCircle className="w-7 h-7 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-amber-400">⚠️ {duplicateResults.length} Similar Complaint{duplicateResults.length !== 1 ? 's' : ''} Found</h4>
+                  <p className="text-sm text-amber-200/80 mt-1">
+                    Our AI detected existing reports that match yours ({duplicateResults[0]?.similarityPercent}% similarity). Help avoid duplicates by supporting them.
                   </p>
-                  <Link to={`/details/${duplicateWarning.similarId}`} target="_blank" className="inline-flex items-center space-x-2 mt-3 px-4 py-2 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 rounded-xl transition-all font-semibold">
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowDuplicateModal(true); }}
+                    className="inline-flex items-center space-x-2 mt-3 px-4 py-2 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded-xl transition-all font-semibold text-sm"
+                  >
                     <FileText className="w-4 h-4" />
-                    <span>View Existing Complaint</span>
-                  </Link>
+                    <span>Review & Upvote Existing</span>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -790,9 +831,15 @@ const Submit = () => {
                 </div>
               </div>
               <div className="flex-1 flex flex-col justify-center">
-                <h3 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400">
-                  AI Analysis Complete
+                <h3 className={`text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${aiData?.aiFallback ? 'from-amber-400 to-orange-400' : 'from-blue-400 to-green-400'}`}>
+                  {aiData?.aiFallback ? 'Template Generated' : 'AI Analysis Complete'}
                 </h3>
+                {aiData?.aiFallback && (
+                  <p className="text-sm text-amber-300/80 mt-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    AI temporarily unavailable — please review and edit the details below
+                  </p>
+                )}
                 {aiData && (
                   <div className="mt-4 bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col">
                     <div className="flex justify-between items-end mb-2">
@@ -1057,12 +1104,26 @@ const Submit = () => {
               whileTap={{ scale: 0.99 }}
               className={`w-full py-5 rounded-2xl text-lg font-bold flex justify-center text-white mt-8 transition-all ${
                 isSubmitting ? 'bg-gray-600' : 
-                duplicateWarning ? 'bg-gradient-to-r from-yellow-600 to-orange-600 shadow-xl shadow-yellow-600/20 hover:shadow-yellow-600/40' 
+                duplicateWarning ? 'bg-gradient-to-r from-amber-600 to-orange-600 shadow-xl shadow-amber-600/20 hover:shadow-amber-600/40' 
                 : 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]'
               }`}
             >
-              {isSubmitting ? 'Submitting to Authority...' : duplicateWarning ? 'Submit Anyway (Ignore Warning)' : 'Submit Official Complaint'}
+              {isSubmitting ? 'Submitting to Authority...' : duplicateWarning ? 'Submit New Complaint' : 'Submit Official Complaint'}
             </motion.button>
+
+            {/* Duplicate Detection Modal */}
+            <DuplicateModal
+              isOpen={showDuplicateModal}
+              onClose={() => setShowDuplicateModal(false)}
+              similarComplaints={duplicateResults}
+              onSubmitAnyway={() => {
+                setShowDuplicateModal(false);
+                // Trigger form submit programmatically
+                const fakeEvent = { preventDefault: () => {} };
+                handleSubmit(fakeEvent);
+              }}
+              isSubmitting={isSubmitting}
+            />
           </motion.form>
         )}
 

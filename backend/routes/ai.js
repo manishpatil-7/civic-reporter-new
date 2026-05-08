@@ -101,31 +101,11 @@ router.post("/analyze", async (req, res) => {
 
     // Build dynamic prompt inserts
     const nameInsert = userName
-      ? `The complainant's name is "${userName}". Use this name in the formal letter like "I, ${userName}, ..."`
+      ? `The complainant's name is "${userName}".`
       : "";
     const locationInsert = locationAddress
-      ? `The location of the issue is "${locationAddress}". Include this location in the letter.`
+      ? `The location of the issue is "${locationAddress}".`
       : "";
-
-    // Authority-aware letter generation
-    let authorityInsert = "";
-    if (authorityInfo) {
-      const escapedHeader = authorityInfo.letterHeader ? authorityInfo.letterHeader.replace(/\n/g, '\\\\n') : '';
-      authorityInsert = `
-IMPORTANT — AUTHORITY ADDRESSING:
-The complaint letter MUST be addressed to the correct authority. Use this EXACT header at the start of the formalLetter:
-
-"${escapedHeader}"
-
-Do NOT use "Municipal Commissioner" or "Municipal Corporation" unless specifically indicated above.
-The authority type is: ${authorityInfo.authorityType}.
-- If "gram_panchayat" → address to The Sarpanch of the Gram Panchayat
-- If "municipal_council" → address to The Chief Officer of the Municipal Council
-- If "municipal_corporation" → address to The Municipal Commissioner of the Municipal Corporation
-
-Start the letter body after the header with "Subject: ..." and then the complaint text.
-`;
-    }
 
     const promptText = `You are a civic issue detection AI with IMAGE VALIDATION capabilities. 
 
@@ -171,28 +151,28 @@ CONFIDENCE GUIDELINES (0 to 100):
 
 ${nameInsert}
 ${locationInsert}
-${authorityInsert}
 
-IMPORTANT DATE AND LOCATION RULES:
-- You MUST include the date "${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}" in the formal letter. Place it at the top-right of the letter before the "To," line like: "Date: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}".
-- ${locationAddress ? `You MUST mention the city/location "${locationAddress}" in the letter body where describing the issue location.` : 'If no location is provided, write "[Location]" as placeholder.'}
+IMPORTANT: For the 'complaintBody' field, write ONLY the main paragraphs of the formal complaint letter describing the issue. 
+- Start directly with the issue description (e.g., "I wish to bring to your urgent attention...").
+- Do NOT include the Date, To address, Subject, Salutation (Dear Sir/Madam), or Closing (Yours faithfully), as these will be added automatically.
+- Mention the location and the problem clearly based on the image.
 
 Return ONLY valid JSON (no markdown, no backticks):
 {
   "imageValidation": {
     "isValid": true/false,
-    "reason": "<why valid or invalid — e.g. 'Image shows a pothole on road' or 'Image shows a selfie, not a civic issue'>",
-    "detectedContent": "<what you see in the image — e.g. 'large pothole on asphalt road' or 'person taking selfie in mirror'>"
+    "reason": "<why valid or invalid>",
+    "detectedContent": "<what you see in the image>"
   },
   "problemType": "<type or None if invalid>",
   "severity": "<low|medium|high>",
   "confidence": <0-100>,
   "description": "<2-3 line description>",
-  "formalLetter": "<formal complaint letter if valid, otherwise empty string>${authorityInfo ? ` addressed using the EXACT authority header provided above` : " to the local authority"}${userName ? `, starting with 'I, ${userName}, ...'` : ""}${locationAddress ? `, mentioning the location '${locationAddress}'` : ""}. Include Subject line, date (${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}), and closing with 'Yours faithfully'.>"
+  "complaintBody": "<2-3 paragraphs describing the issue in formal language, mentioning the location if provided>"
 }
 
-CRITICAL: If the image is INVALID (selfie, food, laptop, etc.), set imageValidation.isValid = false and set problemType = "None", confidence = 0, formalLetter = "".
-CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines inside strings using \\n. Do NOT use literal unescaped newlines in the formalLetter or anywhere else.
+CRITICAL: If the image is INVALID, set imageValidation.isValid = false and set problemType = "None", confidence = 0, complaintBody = "".
+CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines inside strings using \\n.
 `;
 
     // Download image and convert to base64 for Gemini vision
@@ -234,10 +214,13 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
         const msg = err.message || "";
         console.error(`❌ Attempt ${i + 1} failed:`, msg);
         
-        // Check for rate limit or quota exceeded
-        if ((msg.includes("429") || msg.includes("quota") || msg.includes("rate") || msg.includes("Please retry")) && i < 2) {
+        // Check for rate limit, quota exceeded, or access denied
+        const isQuotaError = msg.includes("429") || msg.includes("quota") || msg.includes("rate") || msg.includes("Please retry");
+        const isAccessDenied = msg.includes("403") || msg.includes("Forbidden") || msg.includes("denied access") || msg.includes("PERMISSION_DENIED");
+        
+        if ((isQuotaError || isAccessDenied) && i < 2) {
           const delay = Math.pow(2, i) * 3000; // Exponential backoff: 3s, 6s, 12s
-          console.log(`⏳ Rate limited. Waiting ${delay}ms before retry...`);
+          console.log(`⏳ Rate limited / access denied. Waiting ${delay}ms before retry...`);
           await sleep(delay);
         } else if (msg.includes("safety") || msg.includes("blocked")) {
           // Safety block - return fallback immediately
@@ -251,6 +234,9 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
             priority: 20,
             imageValidation: { isValid: true, reason: "Safety blocked — skipped", detectedContent: "unknown" },
           });
+        } else if (isQuotaError || isAccessDenied) {
+          // Final retry exhausted for quota/access errors — don't throw, let it fall through to fallback
+          console.log(`⚠️ All retries exhausted for quota/access error`);
         } else {
           throw err;
         }
@@ -307,29 +293,32 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
 
     const priority = severityScore * 10;
 
-    // --- Post-process formalLetter to ensure correct date and city ---
-    let finalLetter = parsed.formalLetter || "";
-    if (finalLetter) {
+    // --- Assemble final formal letter ensuring correct date and city ---
+    let finalLetter = "";
+    if (parsed.problemType !== "None" && parsed.problemType) {
       const todayDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
       
-      // Fix date: replace any incorrect/placeholder dates with today's date
-      // Common AI date patterns: "Date: ...", "Dated: ...", just a date line at the top
-      finalLetter = finalLetter.replace(
-        /Date[d]?\s*[:.]\s*\[?[\w\s,\/\.\-]*\]?/gi,
-        `Date: ${todayDate}`
-      );
+      const header = authorityInfo?.letterHeader || "To,\nThe Local Authority,\nConcerned Department";
       
-      // If no "Date:" line exists at all, prepend it
-      if (!/Date\s*:/i.test(finalLetter)) {
-        finalLetter = `Date: ${todayDate}\n\n${finalLetter}`;
-      }
+      let subjectLocation = locationAddress ? ` at ${locationAddress.split(',')[0]}` : '';
+      const subject = `Subject: Urgent complaint regarding ${parsed.problemType} issue${subjectLocation}`;
       
-      // Fix city/location: if location was provided but letter has placeholder or missing location
-      if (locationAddress) {
-        finalLetter = finalLetter.replace(/\[Location\]/gi, locationAddress);
-        finalLetter = finalLetter.replace(/\[City\]/gi, locationAddress);
-        finalLetter = finalLetter.replace(/\[Address\]/gi, locationAddress);
-      }
+      const salutation = "Respected Sir/Madam,";
+      
+      let bodyText = parsed.complaintBody || parsed.formalLetter || `I am writing to report a ${parsed.problemType} issue${locationAddress ? ` located at ${locationAddress}` : ''}. Please look into this matter urgently as it is causing inconvenience to the public.`;
+      
+      // Clean up body text in case the AI still included salutations or closing
+      bodyText = bodyText.replace(/Subject:.*\n/gi, '');
+      bodyText = bodyText.replace(/(Dear|Respected) (Sir|Madam)[,\.]?\n/gi, '');
+      bodyText = bodyText.replace(/Yours (faithfully|sincerely|truly)[,\.]?\n.*/gis, '');
+      bodyText = bodyText.replace(/Date:.*\n/gi, '');
+      bodyText = bodyText.replace(/To,\n.*\n/gi, ''); // Try to strip "To," block if any
+      bodyText = bodyText.replace(/\\n/g, '\n'); // Fix literal \n
+      bodyText = bodyText.trim();
+
+      const closing = `Thank you for your prompt action.\n\nYours faithfully,\n${userName || "Concerned Citizen"}`;
+      
+      finalLetter = `Date: ${todayDate}\n\n${header}\n\n${subject}\n\n${salutation}\n\n${bodyText}\n\n${closing}`;
     }
 
     const previewData = {
@@ -352,14 +341,24 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
     res.json(previewData);
   } catch (error) {
     console.error("Gemini AI Error:", error.message);
+    
+    // Build a proper fallback letter so the UI still shows something useful
+    const userName = req.body.userName || "Concerned Citizen";
+    const locationAddress = req.body.locationAddress || "";
+    const todayDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+    const aInfo = req.body.authorityInfo;
+    const header = aInfo?.letterHeader || "To,\nThe Local Authority,\nConcerned Department";
+    const fallbackLetter = `Date: ${todayDate}\n\n${header}\n\nSubject: Complaint regarding civic issue${locationAddress ? ` at ${locationAddress.split(',')[0]}` : ''}\n\nRespected Sir/Madam,\n\nI am writing to bring to your attention a civic issue that requires immediate attention${locationAddress ? ` at ${locationAddress}` : ''}. The attached photograph provides evidence of the problem. I kindly request that appropriate action be taken at the earliest to resolve this matter, as it is causing inconvenience to residents in the area.\n\nThank you for your prompt action.\n\nYours faithfully,\n${userName}`;
+    
     return res.json({
       problemType: "other",
       severity: "Medium",
-      description: "AI temporarily unavailable.",
-      formalLetter: "AI temporarily unavailable. Please describe manually.",
-      confidence: 0,
+      description: "AI analysis temporarily unavailable. Please verify the issue details manually.",
+      formalLetter: fallbackLetter,
+      confidence: 0.65,
       priority: 20,
-      imageValidation: { isValid: true, reason: "AI error — skipped", detectedContent: "unknown" },
+      imageValidation: { isValid: true, reason: "AI error — skipped validation", detectedContent: "unknown" },
+      aiFallback: true,
     });
   }
 });

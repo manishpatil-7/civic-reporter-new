@@ -602,9 +602,9 @@ const Details = () => {
               {/* Animated background */}
               <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-blue-500/5 animate-pulse" />
               
-              <div className="relative flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-lg text-white flex items-center gap-2">
+              <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <p className="font-bold text-lg text-white flex items-center justify-center sm:justify-start gap-2">
                     <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
                     Support this issue
                   </p>
