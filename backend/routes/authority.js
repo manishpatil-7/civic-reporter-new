@@ -380,6 +380,10 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, authority.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "Server configuration error: JWT_SECRET not set" });
+    }
+
     const token = jwt.sign(
       { 
         id: authority._id, 
@@ -389,7 +393,7 @@ router.post("/login", async (req, res) => {
         city: authority.city,
         area: authority.area
       },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -443,7 +447,7 @@ router.get("/complaints", protectAuthority, async (req, res) => {
 router.patch("/complaints/:id/status", protectAuthority, async (req, res) => {
   try {
     const auth = req.authority;
-    const { status } = req.body; // "IN_PROGRESS", "RESOLVED"
+    const { status } = req.body; // "In Progress", "Resolved"
 
     let filter = { _id: req.params.id };
     if (auth.role === "CITY_ADMIN") {
@@ -469,7 +473,7 @@ router.patch("/complaints/:id/status", protectAuthority, async (req, res) => {
     if (!complaint) return res.status(403).json({ message: "Complaint not found or out of jurisdiction" });
 
     complaint.status = status;
-    if (status === "RESOLVED") complaint.resolvedAt = new Date();
+    if (status === "Resolved") complaint.resolvedAt = new Date();
     
     await complaint.save();
     res.json({ message: "Status updated", complaint });
@@ -506,9 +510,9 @@ router.get("/dashboard/stats", protectAuthority, async (req, res) => {
     
     const stats = {
       total: complaints.length,
-      open: complaints.filter(c => c.status === "OPEN" || c.status === "Pending").length,
-      inProgress: complaints.filter(c => c.status === "IN_PROGRESS" || c.status === "In Progress").length,
-      resolved: complaints.filter(c => c.status === "RESOLVED" || c.status === "Resolved").length,
+      open: complaints.filter(c => c.status === "Pending").length,
+      inProgress: complaints.filter(c => c.status === "In Progress").length,
+      resolved: complaints.filter(c => c.status === "Resolved").length,
     };
 
     res.json(stats);

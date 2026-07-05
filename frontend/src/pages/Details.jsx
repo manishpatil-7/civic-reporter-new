@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { ThumbsUp, MapPin, ArrowLeft, Clock, AlertTriangle, Image as ImageIcon, CheckCircle2, Building2, Shield, Download, Globe, Heart, X, ChevronLeft, ChevronRight, Share2, Maximize2, Copy, Check } from 'lucide-react';
 import StatusTracker from '../components/StatusTracker';
 import MagneticButton from '../components/MagneticButton';
-import TiltCard from '../components/TiltCard';
 import html2pdf from 'html2pdf.js';
 import { copyToClipboard } from '../utils/clipboard';
 

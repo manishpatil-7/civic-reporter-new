@@ -108,12 +108,7 @@ router.post("/check", async (req, res) => {
       SIMILARITY_THRESHOLD
     );
 
-    console.log(`📊 Similarity Check: Checked ${candidates.length} candidates.`);
-    if (candidates.length > 0 && similarResults.length === 0) {
-       // Just to see what the scores were, let's run it with threshold 0
-       const allScores = findSimilarComplaints(newEmbedding, candidates, 0);
-       console.log(`📊 Max similarity score was: ${allScores[0]?.similarityScore}`);
-    }
+
 
     if (similarResults.length > 0) {
       console.log(`⚠️ Found ${similarResults.length} similar complaints (threshold: ${SIMILARITY_THRESHOLD})`);

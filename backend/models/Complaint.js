@@ -17,7 +17,7 @@ const complaintSchema = new mongoose.Schema({
 
   severity: {
     type: String,
-    enum: ["Low", "Medium", "High", "low", "medium", "high"],
+    enum: ["Low", "Medium", "High"],
     default: "Medium",
   },
 
@@ -90,8 +90,8 @@ const complaintSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["Pending", "In Progress", "Resolved", "OPEN", "IN_PROGRESS", "ESCALATED"],
-    default: "OPEN"
+    enum: ["Pending", "In Progress", "Resolved", "Escalated"],
+    default: "Pending"
   },
   state: { type: String },
   district: { type: String },
@@ -213,6 +213,6 @@ complaintSchema.set('toJSON', { virtuals: true });
 complaintSchema.set('toObject', { virtuals: true });
 
 const Complaint = mongoose.model("Complaint", complaintSchema);
-console.log("Complaint model loaded ✅");
+
 
 export default Complaint;

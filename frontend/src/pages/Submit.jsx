@@ -16,7 +16,6 @@ import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import AdvancedMarker from '../components/AdvancedMarker';
 import html2pdf from 'html2pdf.js';
 import MagneticButton from '../components/MagneticButton';
-import TiltCard from '../components/TiltCard';
 import { copyToClipboard } from '../utils/clipboard';
 
 const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '1rem' };

@@ -79,8 +79,6 @@ router.get("/:id", async (req, res) => {
 // 🚀 CREATE COMPLAINT (with Rate Limiting, Image Validation, Location Verification)
 router.post("/", async (req, res) => {
   try {
-    console.log("🔍 BODY:", req.body);
-    console.log("🔍 USER:", req.user);
 
     const {
       imageUrl,
@@ -277,6 +275,8 @@ router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
 
     const oldStatus = complaint.status;
     const { status, verificationStatus, adminRemarks, afterImageUrl, spamStatus, flagReason } = req.body;
+    let emailSentStatus = null;
+    let emailErrorMessage = null;
 
     if (status) complaint.status = status;
     if (verificationStatus) complaint.verificationStatus = verificationStatus;
@@ -425,8 +425,11 @@ router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
           `;
           await sendEmail(complaint.userEmail, "✅ Complaint Resolved Successfully - Civic Reporter", emailHtml);
           console.log(`✅ Resolution email sent to ${complaint.userEmail}`);
+          emailSentStatus = true;
         } catch (emailError) {
           console.error("❌ Failed to send resolution email:", emailError.message);
+          emailSentStatus = false;
+          emailErrorMessage = emailError.message;
           // Don't throw - let the update continue even if email fails
         }
       }
@@ -439,6 +442,8 @@ router.patch("/:id", authMiddleware, adminMiddleware, async (req, res) => {
       ...doc,
       locationAddress: doc.location?.address || '',
       id: doc._id,
+      emailSent: emailSentStatus,
+      emailError: emailErrorMessage,
     });
 
   } catch (error) {

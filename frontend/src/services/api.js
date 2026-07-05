@@ -104,9 +104,7 @@ export const demoteUser = async (uid) => {
   return await api.put(`/users/demote/${uid}`);
 };
 
-export const deleteUser = async (uid) => {
-  return await api.delete(`/users/${uid}`);
-};
+
 
 export const requestAdminAccess = async () => {
   return await api.post('/users/request-admin');

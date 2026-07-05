@@ -243,11 +243,15 @@ const Admin = () => {
             setResolveUploading(false);
           }
         }
-        await updateComplaint(modalTarget.id, {
+        const res = await updateComplaint(modalTarget.id, {
           status: 'Resolved',
           afterImageUrl: afterImageUrl || '',
         });
-        toast.success('Issue marked as Resolved ✅');
+        if (res.data && res.data.emailSent === false) {
+          toast.error(`Issue marked as Resolved, but email failed: ${res.data.emailError || 'SMTP Error'}`, { id: 'resolve-status', duration: 6000 });
+        } else {
+          toast.success('Issue marked as Resolved ✅', { id: 'resolve-status' });
+        }
         setResolveFile(null);
         setResolvePreview(null);
       } else if (modalType === 'verification') {

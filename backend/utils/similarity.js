@@ -120,4 +120,4 @@ export function findSimilarComplaints(newEmbedding, candidates, threshold = 0.8,
   return results.slice(0, maxResults);
 }
 
-console.log("✅ Similarity engine loaded");
+

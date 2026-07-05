@@ -78,7 +78,6 @@ const VALID_CIVIC_KEYWORDS = [
 // ANALYZE ENDPOINT — Vision-based civic issue detection + Image Validation
 // ===================================================
 router.post("/analyze", async (req, res) => {
-  console.log("AI ROUTE HIT ✅");
   try {
     const { imageUrl, userName, locationAddress, authorityInfo } = req.body;
 
@@ -247,7 +246,6 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
       throw lastError || new Error("Failed to get response from Gemini API");
     }
 
-    console.log("RAW AI RESPONSE:", rawText);
 
     // Clean markdown fences
     const cleaned = rawText
@@ -337,7 +335,6 @@ CRITICAL: The output MUST be strictly valid JSON. You MUST escape all newlines i
       imageValidation,
     };
 
-    console.log("FINAL RESPONSE:", previewData);
     res.json(previewData);
   } catch (error) {
     console.error("Gemini AI Error:", error.message);
@@ -422,7 +419,6 @@ Return ONLY valid JSON:
 // TRANSLATE ENDPOINT — On-demand letter translation
 // ===================================================
 router.post("/translate", async (req, res) => {
-  console.log("TRANSLATE ROUTE HIT ✅");
   try {
     const { text, targetLanguage } = req.body;
 

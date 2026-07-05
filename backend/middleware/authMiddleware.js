@@ -8,7 +8,11 @@ export const protectAuthority = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    if (!process.env.JWT_SECRET) {
+      console.error("FATAL: JWT_SECRET environment variable is not set");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     req.authority = decoded;
     next();

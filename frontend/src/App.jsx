@@ -14,7 +14,6 @@ import MyComplaints from './pages/MyComplaints';
 import AuthorityLogin from './pages/authority/Login';
 import AuthorityDashboard from './pages/authority/Dashboard';
 import AuthorityComplaintDetail from './pages/authority/ComplaintDetail';
-// FAB removed — report buttons already exist in Navbar and Dashboard
 import EnhancedBackground from './components/EnhancedBackground';
 import CursorEffect from './components/CursorEffect';
 import SmoothScroll from './components/SmoothScroll';
@@ -60,7 +59,6 @@ const AnimatedRoutes = () => {
   );
 };
 
-// BackgroundEffects replaced by EnhancedBackground component
 
 function App() {
   return (
