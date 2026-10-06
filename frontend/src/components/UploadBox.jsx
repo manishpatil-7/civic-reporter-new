@@ -59,23 +59,18 @@ const UploadBox = ({ onUpload }) => {
   return (
     <div className="w-full max-w-2xl mx-auto mt-8">
       <motion.div
-        whileHover={{ scale: 1.01 }}
-        className={`relative glass-panel rounded-3xl p-10 border-2 transition-all duration-300 ${
+        whileHover={!preview ? { scale: 1.01 } : {}}
+        className={`relative bg-white rounded-3xl p-10 border-2 transition-all duration-300 ${
           dragActive 
-            ? "border-blue-400 bg-blue-500/10 shadow-[0_0_30px_rgba(59,130,246,0.3)]" 
-            : "border-dashed border-white/20 hover:border-blue-400/50 hover:bg-white/5 pointer-events-auto shadow-2xl shadow-black/50"
+            ? "border-emerald-400 bg-emerald-50 shadow-md" 
+            : "border-dashed border-gray-300 hover:border-emerald-400 hover:bg-gray-50 shadow-sm"
         } cursor-pointer min-h-[360px] flex flex-col items-center justify-center text-center overflow-hidden`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !preview && inputRef.current?.click()}
       >
-        {/* Decorative corner glows */}
-        <div className="absolute -top-10 -left-10 w-32 h-32 bg-blue-500/20 blur-2xl rounded-full"></div>
-        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/20 blur-2xl rounded-full"></div>
-
-        {/* Standard file picker */}
         <input
           ref={inputRef}
           type="file"
@@ -84,7 +79,6 @@ const UploadBox = ({ onUpload }) => {
           className="hidden"
         />
 
-        {/* Camera capture input (Android/iOS) */}
         <input
           ref={cameraInputRef}
           type="file"
@@ -97,19 +91,20 @@ const UploadBox = ({ onUpload }) => {
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
           {preview ? (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative w-full h-full min-h-[300px] rounded-2xl overflow-hidden group shadow-lg"
+              className="relative w-full h-full min-h-[300px] rounded-2xl overflow-hidden group border border-gray-200 shadow-sm"
             >
               <img 
                 src={preview} 
                 alt="Preview" 
-                className="w-full h-full object-cover rounded-2xl transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover rounded-2xl"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                 <button 
                   onClick={removeImage}
-                  className="bg-red-500/90 text-white p-4 rounded-full hover:bg-red-500 shadow-xl shadow-red-500/20 transform hover:scale-110 transition-all"
+                  className="bg-white text-red-600 p-3 rounded-full hover:bg-red-50 hover:text-red-700 shadow-md transform hover:scale-105 transition-all"
+                  aria-label="Remove image"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -122,29 +117,29 @@ const UploadBox = ({ onUpload }) => {
               className="flex flex-col items-center justify-center space-y-5"
             >
               <motion.div 
-                animate={dragActive ? { y: -10, scale: 1.1 } : { y: 0, scale: 1 }}
-                className="p-5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full inline-block backdrop-blur-md border border-white/10 shadow-lg"
+                animate={dragActive ? { y: -5, scale: 1.05 } : { y: 0, scale: 1 }}
+                className="p-5 bg-emerald-50 rounded-full inline-block border border-emerald-100"
               >
-                <UploadCloud className="w-14 h-14 text-blue-400" />
+                <UploadCloud className="w-10 h-10 text-emerald-600" />
               </motion.div>
               <div>
-                <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 mb-2">
-                  Drop evidence here
+                <p className="text-xl font-bold text-gray-900 mb-1">
+                  Upload issue evidence
                 </p>
-                <p className="text-base text-gray-400 font-medium">or click to browse your files</p>
+                <p className="text-sm text-gray-500 font-medium">Drag & drop or click to browse</p>
               </div>
               
               <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6">
-                <div className="flex items-center space-x-2 text-sm text-gray-500 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                  <ImageIcon className="w-4 h-4" />
+                <div className="flex items-center space-x-2 text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                  <ImageIcon className="w-3.5 h-3.5" />
                   <span>JPG, PNG up to 10MB</span>
                 </div>
                 
                 <button
                   onClick={handleCameraCapture}
-                  className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-blue-600/30 to-purple-600/30 text-blue-300 rounded-full border border-blue-500/30 hover:from-blue-600/50 hover:to-purple-600/50 transition-all font-semibold hover:shadow-lg hover:shadow-blue-500/20"
+                  className="flex items-center space-x-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 hover:bg-emerald-100 transition-all font-semibold text-sm"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-3.5 h-3.5" />
                   <span>Take Photo</span>
                 </button>
               </div>

@@ -15,8 +15,8 @@ import { getDepartment } from '../utils/departments';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import AdvancedMarker from '../components/AdvancedMarker';
 import html2pdf from 'html2pdf.js';
-import MagneticButton from '../components/MagneticButton';
 import { copyToClipboard } from '../utils/clipboard';
+import { useTheme } from '../context/ThemeContext';
 
 const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '1rem' };
 const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Delhi as fallback
@@ -46,6 +46,8 @@ const AUTHORITY_TYPES = [
 
 const Submit = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { userData } = useAuth();
   const location = useUserLocation();
 
@@ -496,7 +498,7 @@ const Submit = () => {
   const Stepper = () => {
     return (
       <div className="flex items-center justify-center mb-12">
-        <div className="flex items-center space-x-2 bg-white/5 p-2 rounded-2xl border border-white/10">
+        <div className="flex items-center space-x-2 p-2 rounded-2xl border bg-white border-gray-200 shadow-sm">
           {steps.map((s, idx) => {
             const num = idx + 1;
             const isActive = step === num;
@@ -506,23 +508,14 @@ const Submit = () => {
               <div key={s} className="flex items-center">
                 <motion.div 
                   className="relative"
-                  whileHover={!isCompleted ? { scale: 1.05 } : {}}
+                  whileHover={!isCompleted ? { scale: 1.02 } : {}}
                 >
-                  {/* Glow effect for active step */}
-                  {isActive && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur-md"
-                      animate={{ opacity: [0.5, 0.8, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                  
                   <div className={`relative flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                     isActive 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
+                      ? 'bg-emerald-600 text-white' 
                       : isCompleted 
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-white/5 text-gray-500'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-gray-50 text-gray-400 border border-transparent'
                   }`}>
                     {isCompleted ? (
                       <motion.div
@@ -535,7 +528,7 @@ const Submit = () => {
                     ) : (
                       <span className="flex items-center gap-2">
                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                          isActive ? 'bg-white/20' : 'bg-white/10'
+                          isActive ? 'bg-white/20' : 'bg-gray-200 text-gray-500'
                         }`}>
                           {num}
                         </span>
@@ -554,7 +547,7 @@ const Submit = () => {
                     style={{ originX: 0 }}
                   >
                     <div className={`h-full rounded-full ${
-                      isCompleted ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-white/10'
+                      isCompleted ? 'bg-emerald-500' : 'bg-gray-200'
                     }`} />
                   </motion.div>
                 )}
@@ -571,58 +564,47 @@ const Submit = () => {
     return (
       <div className="relative flex flex-col items-center">
         {/* Image with scanning effect */}
-        <div className="relative w-64 h-64 rounded-3xl overflow-hidden shadow-2xl mb-8">
+        <div className="relative w-64 h-64 rounded-3xl overflow-hidden shadow-md border border-gray-200 mb-8">
           <img src={preview} className="w-full h-full object-cover" alt="Analyzing" />
           
-          {/* Dark overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19]/90 via-[#0B0F19]/50 to-[#0B0F19]/30" />
+          {/* Light overlay */}
+          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
           
           {/* Scanning line */}
           <motion.div
-            className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_rgba(34,211,238,0.8)]"
+            className="absolute left-0 right-0 h-1 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
             animate={{ top: ['0%', '100%', '0%'] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
           />
           
           {/* Corner brackets */}
-          <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-cyan-400/60" />
-          <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-cyan-400/60" />
-          <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-cyan-400/60" />
-          <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-cyan-400/60" />
+          <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-emerald-500" />
+          <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-emerald-500" />
+          <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-emerald-500" />
+          <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-emerald-500" />
           
           {/* AI Status Badge */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2">
             <motion.div 
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/30"
-              animate={{ opacity: [0.7, 1, 0.7] }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-emerald-100"
+              animate={{ opacity: [0.8, 1, 0.8] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <Cpu className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span className="text-xs font-semibold text-cyan-300">AI Analyzing...</span>
+              <Cpu className="w-4 h-4 text-emerald-600 animate-pulse" />
+              <span className="text-xs font-bold text-emerald-800">AI Analyzing...</span>
             </motion.div>
-          </div>
-          
-          {/* Scanning grid overlay */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="w-full h-full" style={{
-              backgroundImage: `
-                linear-gradient(rgba(34,211,238,0.3) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(34,211,238,0.3) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }} />
           </div>
         </div>
         
         {/* Analysis text */}
         <div className="text-center space-y-2">
           <motion.div
-            className="flex items-center justify-center gap-2 text-cyan-400"
-            animate={{ opacity: [0.5, 1, 0.5] }}
+            className="flex items-center justify-center gap-2 text-emerald-700"
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             <ScanLine className="w-5 h-5" />
-            <span className="text-sm font-medium">Scanning image for issues...</span>
+            <span className="text-sm font-bold">Scanning image for issues...</span>
           </motion.div>
           
           {/* Progress dots */}
@@ -630,7 +612,7 @@ const Submit = () => {
             {[0, 1, 2, 3].map((i) => (
               <motion.div
                 key={i}
-                className="w-2 h-2 rounded-full bg-cyan-400"
+                className="w-2 h-2 rounded-full bg-emerald-500"
                 animate={{ 
                   scale: [1, 1.5, 1],
                   opacity: [0.3, 1, 0.3]
@@ -704,11 +686,11 @@ const Submit = () => {
           <motion.h1 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-extrabold mb-2 text-center"
+            className="text-4xl font-extrabold mb-2 text-center text-gray-900"
           >
-            <span className="text-gradient">Report an Issue</span>
+            Report an Issue
           </motion.h1>
-          <p className="text-gray-400 text-center mb-4">Upload a photo, and our AI will document the rest.</p>
+          <p className="text-center mb-4 text-gray-600">Upload a photo, and our AI will document the rest.</p>
           
           {/* Image Validation Error Banner */}
           {imageValidation && !imageValidation.isValid && (
@@ -793,7 +775,7 @@ const Submit = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onSubmit={handleSubmit}
-            className="glass-panel p-8 rounded-3xl max-w-4xl mx-auto space-y-8"
+            className="p-8 rounded-3xl max-w-4xl mx-auto space-y-8 bg-white border border-gray-200 shadow-xl"
           >
             {/* Duplicate warning banner — opens the detailed modal */}
             {duplicateWarning && duplicateResults.length > 0 && (
@@ -822,15 +804,15 @@ const Submit = () => {
             )}
 
             {/* Top Analysis Header */}
-            <div className="flex flex-col md:flex-row gap-6 mb-6 pb-6 border-b border-white/10">
-              <div className="w-full md:w-1/4 rounded-2xl overflow-hidden shadow-lg relative h-40 flex-shrink-0">
+            <div className="flex flex-col md:flex-row gap-6 mb-6 pb-6 border-b border-gray-200">
+              <div className="w-full md:w-1/4 rounded-2xl overflow-hidden shadow-md border border-gray-100 relative h-40 flex-shrink-0">
                 <img src={preview} alt="Thumb" className="w-full h-full object-cover" />
-                <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur text-xs font-bold rounded-lg text-white">
+                <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur text-xs font-bold rounded-lg text-emerald-700 shadow-sm border border-emerald-100">
                   Evidence
                 </div>
               </div>
               <div className="flex-1 flex flex-col justify-center">
-                <h3 className={`text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${aiData?.aiFallback ? 'from-amber-400 to-orange-400' : 'from-blue-400 to-green-400'}`}>
+                <h3 className={`text-3xl font-extrabold ${aiData?.aiFallback ? 'text-amber-600' : 'text-emerald-700'}`}>
                   {aiData?.aiFallback ? 'Template Generated' : 'AI Analysis Complete'}
                 </h3>
                 {aiData?.aiFallback && (
@@ -840,17 +822,17 @@ const Submit = () => {
                   </p>
                 )}
                 {aiData && (
-                  <div className="mt-4 bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col">
+                  <div className="mt-4 p-4 rounded-xl border bg-gray-50 border-gray-200 flex flex-col">
                     <div className="flex justify-between items-end mb-2">
-                      <span className="text-sm text-gray-400 font-medium tracking-wide">Confidence Score</span>
-                      <span className="text-md font-bold text-blue-400">{Math.round((aiData.confidence || 0) * 100)}%</span>
+                      <span className="text-sm text-gray-500 font-bold tracking-wide uppercase">Confidence Score</span>
+                      <span className="text-md font-bold text-emerald-600">{Math.round((aiData.confidence || 0) * 100)}%</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.round((aiData.confidence || 0) * 100)}%` }}
                         transition={{ duration: 1, ease: 'easeOut' }}
-                        className="h-full bg-gradient-to-r from-blue-500 to-green-400 rounded-full"
+                        className="h-full bg-emerald-500 rounded-full"
                       />
                     </div>
                   </div>
@@ -860,15 +842,15 @@ const Submit = () => {
 
             {/* ===== AUTHORITY DETECTION SECTION ===== */}
             <div className="space-y-4">
-              <label className="block text-sm font-semibold text-gray-400 flex items-center space-x-2 uppercase tracking-wider">
-                <Shield className="w-4 h-4 text-emerald-400" />
+              <label className="block text-sm font-bold text-gray-700 flex items-center space-x-2 uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-emerald-500" />
                 <span>Detected Authority</span>
               </label>
               
               {authorityLoading ? (
-                <div className="glass-panel p-4 rounded-xl border border-white/10 flex items-center space-x-3">
-                  <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-400 text-sm">Detecting local authority...</span>
+                <div className="p-4 rounded-xl border bg-gray-50 border-gray-200 shadow-sm flex items-center space-x-3">
+                  <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-500 font-medium text-sm">Detecting local authority...</span>
                 </div>
               ) : authorityInfo ? (
                 <motion.div 
@@ -877,26 +859,26 @@ const Submit = () => {
                   className="space-y-3"
                 >
                   {/* Authority Badge */}
-                  <div className={`flex items-center justify-between p-4 rounded-xl border ${getConfidenceColor(authorityInfo.confidence).bg} ${getConfidenceColor(authorityInfo.confidence).border}`}>
+                  <div className="flex items-center justify-between p-4 rounded-xl border bg-emerald-50 border-emerald-200 shadow-sm">
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">
                         {AUTHORITY_TYPES.find(a => a.value === authorityInfo.authorityType)?.icon || '🏛️'}
                       </span>
                       <div>
-                        <p className="font-bold text-white text-sm">{authorityInfo.authorityBody}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="font-bold text-emerald-900 text-sm">{authorityInfo.authorityBody}</p>
+                        <p className="text-xs text-emerald-700 font-medium">
                           {authorityInfo.authorityTitle} • {authorityInfo.displayAddress}
                         </p>
                       </div>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${getConfidenceColor(authorityInfo.confidence).bg} ${getConfidenceColor(authorityInfo.confidence).text} border ${getConfidenceColor(authorityInfo.confidence).border}`}>
+                    <div className="px-3 py-1 rounded-full text-xs font-bold bg-white text-emerald-700 border border-emerald-200 shadow-sm">
                       {authorityInfo.confidence}% Confidence
                     </div>
                   </div>
 
                   {/* Manual Override */}
                   <div className="flex items-center space-x-3">
-                    <span className="text-xs text-gray-500 whitespace-nowrap">Not correct? Override:</span>
+                    <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Not correct? Override:</span>
                     <div className="flex space-x-2 flex-1">
                       {AUTHORITY_TYPES.map(({ value, label, icon }) => (
                         <button
@@ -904,9 +886,9 @@ const Submit = () => {
                           type="button"
                           onClick={() => handleAuthorityOverride(value)}
                           className={`flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                            authorityOverride === value
-                              ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-lg shadow-blue-500/10'
-                              : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                              authorityOverride === value
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-sm'
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                           }`}
                         >
                           <span>{icon}</span>
@@ -917,14 +899,14 @@ const Submit = () => {
                   </div>
 
                   {authorityInfo.confidence < 70 && (
-                    <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center space-x-2">
-                      <AlertCircle className="w-4 h-4 text-orange-400 shrink-0" />
-                      <p className="text-xs text-orange-300">Low confidence detection. Please verify the authority type above.</p>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center space-x-2 shadow-sm">
+                      <AlertCircle className="w-4 h-4 text-orange-500 shrink-0" />
+                      <p className="text-xs text-orange-800 font-medium">Low confidence detection. Please verify the authority type above.</p>
                     </div>
                   )}
                 </motion.div>
               ) : (
-                <div className="glass-panel p-4 rounded-xl border border-white/10 text-gray-500 text-sm">
+                <div className="p-4 rounded-xl border text-sm bg-gray-50 border-gray-200 shadow-sm text-gray-600 font-medium">
                   Location needed to detect authority. Please enable location access.
                 </div>
               )}
@@ -952,15 +934,14 @@ const Submit = () => {
                     }}
                   />
 
-                  <label className="block text-sm font-semibold text-gray-400 mb-2 mt-4 flex items-center space-x-2 uppercase tracking-wider">
-                    <MapPin className="w-4 h-4 text-blue-400" />
+                  <label className="block text-sm font-bold text-gray-700 mb-2 mt-4 flex items-center space-x-2 uppercase tracking-wider">
+                    <MapPin className="w-4 h-4 text-emerald-500" />
                     <span>Exact Location</span>
                   </label>
-                  <div className="glass-panel p-2 rounded-2xl border-white/5 mb-2 overflow-hidden relative">
+                  <div className="bg-gray-50 p-2 rounded-2xl border border-gray-200 shadow-sm mb-2 overflow-hidden relative">
                     {!isLoaded ? (
                       <div className="h-[300px] w-full flex items-center justify-center bg-white/5"><Loader /></div>
                     ) : (
-                      <div style={{ filter: 'invert(90%) hue-rotate(180deg)', WebkitFilter: 'invert(90%) hue-rotate(180deg)' }}>
                       <GoogleMap
                         mapContainerStyle={mapContainerStyle}
                         center={mapCenter}
@@ -970,29 +951,28 @@ const Submit = () => {
                       >
                         {markerPos && mapInstance && <AdvancedMarker map={mapInstance} position={markerPos} draggable={true} onDragEnd={onMarkerDragEnd} />}
                       </GoogleMap>
-                      </div>
                     )}
-                    <div className="absolute top-4 left-4 right-4 bg-gray-900/80 backdrop-blur-md p-3 rounded-xl border border-white/10 text-sm shadow-xl flex items-start space-x-2">
-                       <MapPin className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                       <span className="flex-1 font-medium">{authorityInfo?.displayAddress || location.address || "Drag marker to adjust location"}</span>
+                    <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl border border-gray-200 text-sm shadow-md flex items-start space-x-2 text-gray-900">
+                       <MapPin className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                       <span className="flex-1 font-bold text-xs">{authorityInfo?.displayAddress || location.address || "Drag marker to adjust location"}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-400 mb-2">Problem Type</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Problem Type</label>
                     <input 
                       type="text" required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-semibold"
+                      className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-semibold bg-white border-gray-300 text-gray-900 shadow-sm"
                       value={formData.problemType}
                       onChange={(e) => handleProblemTypeChange(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-400 mb-2">Severity</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Severity</label>
                     <select 
-                      className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-semibold"
+                      className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-semibold bg-white border-gray-300 text-gray-900 shadow-sm"
                       value={formData.severity}
                       onChange={(e) => setFormData({...formData, severity: e.target.value})}
                     >
@@ -1004,13 +984,13 @@ const Submit = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center space-x-2">
-                    <Building2 className="w-4 h-4 text-green-400" />
+                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center space-x-2 uppercase tracking-wider">
+                    <Building2 className="w-4 h-4 text-emerald-500" />
                     <span>Suggested Department</span>
                   </label>
                   <input 
                     type="text"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                    className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 bg-white border-gray-300 text-gray-900 shadow-sm font-semibold"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   />
@@ -1020,14 +1000,14 @@ const Submit = () => {
               {/* Right Column: Formal Letter + Language */}
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-[-0.5rem]">
-                  <label className="block text-sm font-semibold text-gray-400 flex items-center space-x-2 uppercase tracking-wider">
-                    <FileText className="w-4 h-4 text-purple-400" />
+                  <label className="block text-sm font-bold text-gray-700 flex items-center space-x-2 uppercase tracking-wider">
+                    <FileText className="w-4 h-4 text-emerald-500" />
                     <span>Formal Complaint</span>
                   </label>
                   <button 
                     type="button" 
                     onClick={downloadPDF}
-                    className="flex items-center space-x-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-blue-500/20 hover:border-blue-500/40"
+                    className="flex items-center space-x-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-emerald-200"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download PDF</span>
@@ -1035,26 +1015,26 @@ const Submit = () => {
                 </div>
 
                 {/* English Letter */}
-                <div className="bg-[#fdfdfd] text-gray-800 p-6 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">English Document</p>
+                <div className="bg-gray-50 text-gray-900 p-6 rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">English Document</p>
                   <textarea
                     value={formData.formalLetter || ""}
                     onChange={(e) => setFormData({...formData, formalLetter: e.target.value})}
                     rows="10"
                     className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium resize-y leading-relaxed focus:outline-none"
-                    style={{ color: '#1a1a1a' }}
+                    style={{ color: '#111827' }}
                   />
                 </div>
 
                 {/* Language Selector */}
                 <div className="flex items-center space-x-3">
-                  <Globe className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">Translate to:</span>
+                  <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className="text-xs text-gray-600 font-bold uppercase tracking-wider whitespace-nowrap">Translate to:</span>
                   <select
                     value={selectedLanguage}
                     onChange={(e) => handleTranslate(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-semibold bg-white border-gray-300 text-gray-900 shadow-sm"
                   >
                     {LANGUAGES.map(lang => (
                       <option key={lang.code} value={lang.code}>
@@ -1096,19 +1076,17 @@ const Submit = () => {
               </div>
             </div>
 
-            <motion.button 
+            <button 
               type="submit"
               disabled={isSubmitting}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className={`w-full py-5 rounded-2xl text-lg font-bold flex justify-center text-white mt-8 transition-all ${
-                isSubmitting ? 'bg-gray-600' : 
-                duplicateWarning ? 'bg-gradient-to-r from-amber-600 to-orange-600 shadow-xl shadow-amber-600/20 hover:shadow-amber-600/40' 
-                : 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]'
+              className={`w-full py-4 rounded-xl text-lg font-bold flex justify-center text-white mt-8 transition-all ${
+                isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 
+                duplicateWarning ? 'bg-amber-600 hover:bg-amber-700 shadow-sm' 
+                : 'bg-emerald-600 hover:bg-emerald-700 shadow-sm hover:shadow-md'
               }`}
             >
               {isSubmitting ? 'Submitting to Authority...' : duplicateWarning ? 'Submit New Complaint' : 'Submit Official Complaint'}
-            </motion.button>
+            </button>
 
             {/* Duplicate Detection Modal */}
             <DuplicateModal
@@ -1130,97 +1108,37 @@ const Submit = () => {
         {step === 4 && (
           <motion.div
             key="success"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-            className="glass-premium p-12 rounded-3xl max-w-xl mx-auto text-center relative overflow-hidden"
+            className="bg-white border border-gray-200 shadow-xl p-12 rounded-3xl max-w-xl mx-auto text-center relative overflow-hidden"
           >
-            {/* Animated Background Effects */}
-            <div className="absolute inset-0 overflow-hidden">
-              <motion.div 
-                className="absolute top-0 right-0 w-96 h-96 bg-green-500/20 rounded-full blur-[100px]"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.5, 0.3]
-                }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              <motion.div 
-                className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"
-                animate={{ 
-                  scale: [1, 1.3, 1],
-                  opacity: [0.2, 0.4, 0.2]
-                }}
-                transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-              />
-            </div>
-
-            {/* Floating Particles */}
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 bg-green-400 rounded-full"
-                style={{
-                  left: `${20 + i * 15}%`,
-                  top: '50%',
-                }}
-                animate={{
-                  y: [-100, -200, -100],
-                  x: [0, (i % 2 === 0 ? 30 : -30), 0],
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                }}
-              />
-            ))}
-            
             {/* Success Icon */}
             <motion.div 
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-              className="relative w-28 h-28 mx-auto mb-8"
+              className="relative w-24 h-24 mx-auto mb-6"
             >
-              <motion.div 
-                className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full"
-                animate={{ 
-                  boxShadow: [
-                    '0 0 30px rgba(74,222,128,0.3)', 
-                    '0 0 60px rgba(74,222,128,0.5)', 
-                    '0 0 30px rgba(74,222,128,0.3)'
-                  ] 
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <CheckCircle2 className="w-14 h-14 text-white" />
+              <div className="absolute inset-0 bg-emerald-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-12 h-12 text-emerald-600" />
               </div>
-              {/* Ring effect */}
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-green-400/30"
-                animate={{ scale: [1, 1.3, 1.5], opacity: [0.5, 0.2, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
             </motion.div>
 
             <motion.h2 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl font-extrabold mb-4 text-white"
+              className="text-4xl font-extrabold mb-3 text-gray-900"
             >
-              Submitted!
+              Submitted Successfully
             </motion.h2>
             
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-lg text-gray-300 font-medium mb-6"
+              className="text-lg text-gray-600 font-medium mb-8"
             >
               Thank you for helping improve your city 🙌
             </motion.p>
@@ -1230,10 +1148,10 @@ const Submit = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6 text-left"
+                className="border rounded-xl p-4 mb-6 text-left bg-gray-50 border-gray-200 shadow-sm"
               >
-                <p className="text-xs text-gray-400 mb-1">Complaint addressed to</p>
-                <p className="text-sm font-bold text-white flex items-center space-x-2">
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Complaint addressed to</p>
+                <p className="text-sm font-bold text-gray-900 flex items-center space-x-2">
                   <span>{AUTHORITY_TYPES.find(a => a.value === authorityInfo.authorityType)?.icon}</span>
                   <span>{authorityInfo.authorityBody}</span>
                 </p>
@@ -1244,12 +1162,12 @@ const Submit = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white/5 border border-white/10 rounded-2xl p-6 text-left mb-8"
+              className="border rounded-2xl p-6 text-left mb-8 bg-white border-gray-200 shadow-sm"
             >
-              <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
-                <span className="text-gray-400 font-medium">Complaint ID</span>
-                <div className="flex items-center bg-[#0f172a] border border-white/10 rounded-lg overflow-hidden shadow-inner">
-                  <div className="px-4 py-2 font-mono font-bold text-white tracking-wider select-all">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                <span className="text-gray-600 font-bold uppercase tracking-wider text-xs">Complaint ID</span>
+                <div className="flex items-center border rounded-lg overflow-hidden shadow-inner bg-gray-50 border-gray-200">
+                  <div className="px-4 py-2 font-mono font-bold text-emerald-700 tracking-wider select-all">
                     #{submittedId}
                   </div>
                   <button 
@@ -1265,20 +1183,20 @@ const Submit = () => {
                         toast.error('Failed to copy. Please select the text manually.');
                       }
                     }}
-                    className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/40 transition-colors flex items-center justify-center border-l border-white/10 cursor-pointer"
+                    className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center justify-center border-l cursor-pointer border-gray-200"
                     title="Copy to clipboard"
                   >
                     {copied ? (
-                      <Check className="w-4 h-4 text-green-400" />
+                      <Check className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <Copy className="w-4 h-4 text-blue-400" />
+                      <Copy className="w-4 h-4 text-emerald-600" />
                     )}
                   </button>
                 </div>
               </div>
               <div className="flex items-start space-x-3 text-sm">
-                <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                <span className="text-gray-300 leading-relaxed font-medium">{authorityInfo?.displayAddress || location.address || 'User Specified Location'}</span>
+                <MapPin className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                <span className="text-gray-700 leading-relaxed font-bold">{authorityInfo?.displayAddress || location.address || 'User Specified Location'}</span>
               </div>
             </motion.div>
 
@@ -1288,36 +1206,20 @@ const Submit = () => {
               transition={{ delay: 0.6 }}
               className="flex space-x-4"
             >
-              <MagneticButton strength={0.15} className="flex-1">
-                <motion.button 
-                  onClick={() => navigate('/dashboard')} 
-                  className="w-full py-4 px-6 rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white transition-all border border-white/10 relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="relative z-10">View Dashboard</span>
-                </motion.button>
-              </MagneticButton>
+              <button 
+                onClick={() => navigate('/dashboard')} 
+                className="flex-1 py-4 px-6 rounded-xl font-bold transition-all border bg-white hover:bg-gray-50 text-gray-800 border-gray-200 shadow-sm"
+              >
+                View Dashboard
+              </button>
               
-              <MagneticButton strength={0.15} className="flex-1">
-                <motion.button 
-                  onClick={() => navigate('/my-complaints')} 
-                  className="w-full py-4 px-6 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white transition-all relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500"
-                    initial={{ x: '100%' }}
-                    whileHover={{ x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    Track Status
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </motion.button>
-              </MagneticButton>
+              <button 
+                onClick={() => navigate('/my-complaints')} 
+                className="flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm group"
+              >
+                Track Status
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
             </motion.div>
           </motion.div>
         )}

@@ -8,6 +8,7 @@ import StatusTracker from '../components/StatusTracker';
 import MagneticButton from '../components/MagneticButton';
 import html2pdf from 'html2pdf.js';
 import { copyToClipboard } from '../utils/clipboard';
+import { useTheme } from '../context/ThemeContext';
 
 const AUTHORITY_LABELS = {
   gram_panchayat: { label: 'Gram Panchayat', icon: '🏘️' },
@@ -18,6 +19,8 @@ const AUTHORITY_LABELS = {
 const Details = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { user, isAuthenticated } = useAuth();
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -208,17 +211,15 @@ const Details = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-24 text-white">
+      <div className={`min-h-screen flex items-center justify-center pt-24 ${isDark ? 'text-white' : 'text-gray-900'}`}>
         <div className="w-12 h-12 border-4 border-purple-500 border-b-transparent rounded-full animate-spin"></div>
       </div>
-    );
   }
 
   if (!complaint) {
     return (
-      <div className="min-h-screen pt-24 px-6 text-center text-white">
-        <h2 className="text-2xl font-bold bg-white/10 p-12 rounded-2xl glass-panel inline-block">Complaint Not Found</h2>
+      <div className={`min-h-screen pt-24 px-6 text-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`text-2xl font-bold p-12 rounded-2xl inline-block ${isDark ? 'bg-white/10 glass-panel' : 'bg-white shadow-xl border border-gray-200'}`}>Complaint Not Found</h2>
       </div>
     );
   }
@@ -285,7 +286,7 @@ const Details = () => {
       <MagneticButton strength={0.1}>
         <motion.button 
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group px-4 py-2 rounded-xl hover:bg-white/5"
+          className={`flex items-center gap-2 transition-colors mb-8 group px-4 py-2 rounded-xl ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
           whileHover={{ x: -5 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -301,7 +302,7 @@ const Details = () => {
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-          className="lg:col-span-3 rounded-3xl overflow-hidden glass-premium border border-white/10 p-1.5 shadow-2xl h-fit sticky top-28"
+          className={`lg:col-span-3 rounded-3xl overflow-hidden border p-1.5 shadow-2xl h-fit sticky top-28 ${isDark ? 'glass-premium border-white/10' : 'bg-white border-gray-200'}`}
         >
           {/* Image Toggle Tabs */}
           {hasAfterImage && (
@@ -338,7 +339,7 @@ const Details = () => {
           )}
           
           {/* Main Image Display */}
-          <div className="relative aspect-[4/3] w-full bg-slate-800/50 rounded-2xl overflow-hidden group cursor-zoom-in"
+          <div className={`relative aspect-[4/3] w-full rounded-2xl overflow-hidden group cursor-zoom-in ${isDark ? 'bg-slate-800/50' : 'bg-gray-100'}`}
                onClick={() => setShowLightbox(true)}>
              <AnimatePresence mode="wait">
                <motion.div
@@ -440,7 +441,7 @@ const Details = () => {
           {/* Title Section */}
           <div>
             <motion.h1 
-              className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight"
+              className={`text-3xl md:text-4xl font-bold mb-3 leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -451,7 +452,7 @@ const Details = () => {
             {/* Meta Info Row */}
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
               <motion.div 
-                className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}
                 whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.2)' }}
               >
                 <MapPin className="w-4 h-4 text-blue-400" />
@@ -461,7 +462,7 @@ const Details = () => {
               </motion.div>
               
               <motion.div 
-                className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}
                 whileHover={{ scale: 1.02 }}
               >
                 <Clock className="w-4 h-4 text-purple-400" />
@@ -470,7 +471,7 @@ const Details = () => {
               
               {complaint.userName && (
                 <motion.div 
-                  className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}
                   whileHover={{ scale: 1.02 }}
                 >
                   <span className="text-pink-400">👤</span>
@@ -484,7 +485,7 @@ const Details = () => {
                   setCopiedId(true);
                   setTimeout(() => setCopiedId(false), 2000);
                 }}
-                className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/10 transition-colors group"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors group ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-gray-100 hover:bg-gray-200 border-gray-200'}`}
                 whileHover={{ scale: 1.02 }}
                 title="Copy Complaint ID"
               >
@@ -500,7 +501,7 @@ const Details = () => {
 
           {/* Status Timeline */}
           <motion.div 
-            className="glass-premium p-5 rounded-2xl border border-white/10"
+            className={`p-5 rounded-2xl border ${isDark ? 'glass-premium border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}
             whileHover={{ borderColor: 'rgba(255,255,255,0.15)' }}
           >
             <StatusTracker status={complaint.status} />
@@ -510,7 +511,7 @@ const Details = () => {
           <div className="grid grid-cols-1 gap-3">
             {complaint.authorityBody && (
               <motion.div 
-                className="flex items-center gap-3 p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl"
+                className="flex items-center gap-3 p-4 bg-gradient-to-r from-emerald-500/10 to-emerald-500/10 border border-emerald-500/20 rounded-2xl"
                 whileHover={{ scale: 1.01, borderColor: 'rgba(16,185,129,0.3)' }}
               >
                 <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-2xl">
@@ -543,7 +544,7 @@ const Details = () => {
           {/* Formal Letter Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2 text-gray-200">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                 <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 <span>Formal Complaint Letter</span>
               </h3>
@@ -560,7 +561,7 @@ const Details = () => {
             </div>
 
             <motion.div 
-              className="glass-premium p-6 rounded-2xl text-gray-300 leading-relaxed border border-white/10 relative overflow-hidden"
+              className={`p-6 rounded-2xl leading-relaxed border relative overflow-hidden ${isDark ? 'glass-premium text-gray-300 border-white/10' : 'bg-white text-gray-700 border-gray-200 shadow-sm'}`}
               whileHover={{ borderColor: 'rgba(255,255,255,0.15)' }}
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500" />
@@ -580,7 +581,7 @@ const Details = () => {
                   <Globe className="w-5 h-5 text-cyan-400" />
                   <span>Translated Version</span>
                 </h3>
-                <div className="glass-premium p-6 rounded-2xl text-gray-300 leading-relaxed border border-white/10">
+                <div className={`p-6 rounded-2xl leading-relaxed border ${isDark ? 'glass-premium text-gray-300 border-white/10' : 'bg-white text-gray-700 border-gray-200 shadow-sm'}`}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-blue-500" />
                   <div className="pl-4 text-[15px] whitespace-pre-wrap">
                     {complaint.translatedLetter}
@@ -597,7 +598,7 @@ const Details = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <div className="glass-premium p-6 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border border-white/10 relative overflow-hidden">
+            <div className={`p-6 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-blue-500/10 border relative overflow-hidden ${isDark ? 'glass-premium border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
               {/* Animated background */}
               <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-blue-500/5 animate-pulse" />
               

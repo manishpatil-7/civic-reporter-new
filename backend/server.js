@@ -16,7 +16,7 @@ import duplicateRoutes from "./routes/duplicate.js";
 // Load env first
 dotenv.config();
 
-dns.setServers(["1.1.1.1","8.8.8.8"]);
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 console.log("Starting server...");
 

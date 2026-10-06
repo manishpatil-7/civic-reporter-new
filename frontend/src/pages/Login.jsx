@@ -2,110 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, Leaf, Star, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
-import MagneticButton from '../components/MagneticButton';
-
-// Floating blob component for animated background
-const FloatingBlob = ({ color, size, top, left, delay, duration }) => (
-  <motion.div
-    className={`absolute rounded-full blur-[80px] opacity-30 pointer-events-none ${color}`}
-    style={{ 
-      width: size, 
-      height: size, 
-      top, 
-      left,
-    }}
-    animate={{
-      x: [0, 30, -20, 0],
-      y: [0, -30, 20, 0],
-      scale: [1, 1.2, 0.9, 1],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      delay,
-      ease: "easeInOut"
-    }}
-  />
-);
-
-// Animated input component with floating label
-const AnimatedInput = ({ 
-  type, 
-  value, 
-  onChange, 
-  placeholder, 
-  icon: Icon, 
-  label,
-  error,
-  showToggle,
-  onToggle
-}) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const hasValue = value.length > 0;
-
-  return (
-    <div className="relative">
-      <motion.label
-        className="absolute left-11 text-sm font-medium pointer-events-none z-10"
-        initial={false}
-        animate={{
-          y: isFocused || hasValue ? -28 : 12,
-          scale: isFocused || hasValue ? 0.85 : 1,
-          color: isFocused ? '#60a5fa' : '#9ca3af',
-        }}
-        transition={{ duration: 0.2 }}
-      >
-        {label}
-      </motion.label>
-      
-      <motion.div
-        className="relative"
-        animate={{
-          boxShadow: isFocused 
-            ? '0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1)' 
-            : '0 0 0 0px rgba(59, 130, 246, 0)',
-        }}
-        style={{ borderRadius: '1rem' }}
-      >
-        <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200 ${
-          isFocused ? 'text-blue-400' : 'text-gray-500'
-        }`} />
-        
-        <input
-          type={type}
-          value={value}
-          onChange={onChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 py-4 text-white placeholder-transparent focus:outline-none focus:border-blue-500/50 transition-all"
-        />
-        
-        {showToggle && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            {type === 'password' ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        )}
-      </motion.div>
-      
-      {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-400 text-sm mt-2 flex items-center gap-1"
-        >
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </motion.p>
-      )}
-    </div>
-  );
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -122,7 +20,7 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success('Welcome back! 🎉');
+      toast.success('Welcome back!');
       navigate('/');
     } catch (err) {
       const messages = {
@@ -139,180 +37,176 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 px-6 flex items-center justify-center relative overflow-hidden">
-      {/* Animated Background Blobs */}
-      <FloatingBlob color="bg-blue-600" size={300} top="10%" left="-10%" delay={0} duration={15} />
-      <FloatingBlob color="bg-purple-600" size={250} top="60%" left="80%" delay={2} duration={18} />
-      <FloatingBlob color="bg-cyan-600" size={200} top="-5%" left="60%" delay={4} duration={12} />
-      <FloatingBlob color="bg-pink-600" size={180} top="70%" left="10%" delay={1} duration={20} />
+    <div className="min-h-screen flex bg-slate-50">
+      {/* Left Side - Value Prop & Social Proof */}
+      <div className="hidden lg:flex w-1/2 bg-emerald-800 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Abstract Background Shapes */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-700/50 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-emerald-900/40 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
 
-      {/* Gradient Orbs */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none"
-      />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-        className="glass-premium p-8 md:p-12 rounded-3xl w-full max-w-md relative z-10 border border-white/10"
-      >
-        {/* Glow Effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-        
         <div className="relative z-10">
-          {/* Header */}
-          <motion.div 
-            className="text-center mb-8"
+          <Link to="/" className="inline-flex items-center gap-2 mb-16">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+              <Leaf className="w-6 h-6 text-emerald-700" />
+            </div>
+            <span className="text-2xl font-bold text-white tracking-tight">Civic Reporter</span>
+          </Link>
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ duration: 0.6 }}
           >
-            <motion.div 
-              className="inline-flex p-4 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-2xl mb-6 relative"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-            >
-              <div className="absolute inset-0 bg-blue-500/20 rounded-2xl blur-xl" />
-              <LogIn className="w-8 h-8 text-blue-400 relative z-10" />
-            </motion.div>
-            
-            <h1 className="text-4xl font-extrabold mb-2">
-              Welcome <span className="text-gradient">Back</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+              Real impact. <br /> Better neighborhoods.
             </h1>
-            <p className="text-gray-400 text-sm">
-              Sign in to continue making your city better
+            <p className="text-emerald-100 text-lg max-w-md leading-relaxed">
+              Report civic issues instantly, track their progress, and build a better community together with transparency and accountability.
             </p>
           </motion.div>
+        </div>
 
-          {/* Error Message */}
+        {/* Trust Stats Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative z-10 bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl max-w-sm"
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-yellow-400/20 rounded-full flex items-center justify-center">
+              <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-white">4.9</span>
+                <span className="text-emerald-200 text-sm">/ 5.0 Rating</span>
+              </div>
+              <p className="text-emerald-100 text-sm flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4" /> Trusted by Citizens
+              </p>
+            </div>
+          </div>
+          <p className="text-emerald-50 text-sm italic">
+            "This platform completely changed how fast potholes get fixed in our area."
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-md bg-white border border-slate-100 rounded-3xl shadow-sm p-8 md:p-10"
+        >
+          {/* Mobile Header (Hidden on LG) */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-2xl items-center justify-center mb-4">
+              <Leaf className="w-7 h-7 text-emerald-700" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Civic Reporter</h1>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Welcome Back</h2>
+            <p className="text-slate-500">Sign in to continue to your dashboard</p>
+          </div>
+
           <AnimatePresence mode="wait">
             {error && (
               <motion.div
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-center gap-3"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3 overflow-hidden"
               >
-                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-5 h-5 text-red-400" />
-                </div>
-                <p className="text-sm text-red-300">{error}</p>
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <AnimatedInput
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                label="Email Address"
-                icon={Mail}
-              />
-            </motion.div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="email">
+                Email address <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="admin@civicreporter.com"
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
+                />
+              </div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <AnimatedInput
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                label="Password"
-                icon={Lock}
-                showToggle
-                onToggle={() => setShowPassword(!showPassword)}
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <MagneticButton strength={0.15} className="w-full">
-                <motion.button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 rounded-2xl font-bold text-white relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="password">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full pl-12 pr-12 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {/* Animated Background */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600"
-                    animate={{
-                      backgroundPosition: loading ? ['0% 50%', '100% 50%', '0% 50%'] : '0% 50%',
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: loading ? Infinity : 0,
-                      ease: "linear"
-                    }}
-                    style={{ backgroundSize: '200% 200%' }}
-                  />
-                  
-                  {/* Shine Effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-                    initial={{ x: '-200%' }}
-                    whileHover={{ x: '200%' }}
-                    transition={{ duration: 0.6 }}
-                  />
-                  
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {loading ? (
-                      <>
-                        <motion.div
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        />
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        <span>Sign In</span>
-                      </>
-                    )}
-                  </span>
-                </motion.button>
-              </MagneticButton>
-            </motion.div>
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-base transition-all duration-200 shadow-md shadow-emerald-700/20"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <span>Sign In</span>
+              )}
+            </button>
           </form>
 
-          {/* Footer */}
-          <motion.div 
-            className="mt-8 pt-6 border-t border-white/10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <p className="text-center text-sm text-gray-400">
+          <div className="mt-8 text-center space-y-4">
+            <p className="text-sm text-slate-500">
               Don't have an account?{' '}
-              <Link 
-                to="/signup" 
-                className="text-blue-400 hover:text-blue-300 font-semibold transition-colors relative group"
-              >
-                Create one
-                <span className="absolute -bottom-0.5 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300" />
+              <Link to="/signup" className="text-emerald-700 hover:text-emerald-800 font-bold transition-colors">
+                Create one →
               </Link>
             </p>
-          </motion.div>
-        </div>
-      </motion.div>
+            <div className="border-t border-slate-100 pt-4">
+              <Link
+                to="/authority/login"
+                className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors"
+              >
+                Authority / Officer login →
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

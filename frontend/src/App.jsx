@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -14,14 +15,11 @@ import MyComplaints from './pages/MyComplaints';
 import AuthorityLogin from './pages/authority/Login';
 import AuthorityDashboard from './pages/authority/Dashboard';
 import AuthorityComplaintDetail from './pages/authority/ComplaintDetail';
-import EnhancedBackground from './components/EnhancedBackground';
-import CursorEffect from './components/CursorEffect';
-import SmoothScroll from './components/SmoothScroll';
 import AIChatbot from './components/AIChatbot';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
@@ -54,31 +52,33 @@ const AnimatedRoutes = () => {
             </ProtectedRoute>
           }
         />
+        {/* Authority routes */}
+        <Route path="/authority/login" element={<AuthorityLogin />} />
+        <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
+        <Route path="/authority/complaint/:id" element={<AuthorityComplaintDetail />} />
       </Routes>
     </AnimatePresence>
   );
 };
 
-
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <SmoothScroll>
-          <div className="relative min-h-screen text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden">
-            <EnhancedBackground />
-            <CursorEffect />
-            
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <div
+            className="relative min-h-screen font-sans overflow-x-hidden"
+            style={{ backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)' }}
+          >
             <Navbar />
             <AIChatbot />
-            
-            <main className="relative z-10 w-full h-full">
+            <main className="relative w-full h-full">
               <AnimatedRoutes />
             </main>
           </div>
-        </SmoothScroll>
-      </AuthProvider>
-    </Router>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

@@ -4,8 +4,11 @@ import { GoogleMap, useJsApiLoader, InfoWindowF } from '@react-google-maps/api';
 import AdvancedMarker from '../components/AdvancedMarker';
 import { getComplaints } from '../services/api';
 import ComplaintCard from '../components/ComplaintCard';
+import EmptyState from '../components/EmptyState';
 import TiltCard from '../components/TiltCard';
+import { useTheme } from '../context/ThemeContext';
 import { Filter, Layers, Clock, CheckCircle2, AlertTriangle, Map as MapIcon, TrendingUp, Activity, Zap } from 'lucide-react';
+import Badge from '../components/Badge';
 
 /* CSS filter-based dark mode for the map */
 const darkMapFilterStyle = {
@@ -37,7 +40,7 @@ const AnimatedCounter = ({ value, duration = 2 }) => {
 };
 
 // Glowing Stat Card
-const StatCard = ({ value, label, icon: Icon, color, delay = 0 }) => {
+const StatCard = ({ value, label, icon: Icon, color, delay = 0, loading = false }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -47,14 +50,18 @@ const StatCard = ({ value, label, icon: Icon, color, delay = 0 }) => {
       className="relative group"
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-opacity`} />
-      <div className="relative bg-white/5 p-5 rounded-2xl border border-white/10 text-center backdrop-blur-sm group-hover:border-white/20 transition-all">
+      <div className="relative p-5 rounded-2xl border text-center backdrop-blur-sm transition-all bg-white shadow-sm border-slate-100 hover:border-slate-200">
         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} bg-opacity-20 flex items-center justify-center mx-auto mb-3`}>
-          <Icon className="w-5 h-5 text-white" />
+          <Icon className="w-5 h-5 text-emerald-700" />
         </div>
-        <p className={`text-3xl font-extrabold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
-          <AnimatedCounter value={value} />
-        </p>
-        <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">{label}</p>
+        {loading ? (
+          <div className="h-9 shimmer rounded-lg w-16 mx-auto mb-1"></div>
+        ) : (
+          <p className={`text-3xl font-extrabold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
+            <AnimatedCounter value={value} />
+          </p>
+        )}
+        <p className="text-xs font-semibold uppercase tracking-widest mt-1 text-slate-500">{label}</p>
       </div>
     </motion.div>
   );
@@ -89,6 +96,8 @@ const Dashboard = () => {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [mapInstance, setMapInstance] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
@@ -150,23 +159,21 @@ const Dashboard = () => {
             transition={{ delay: 0.2 }}
             className="flex items-center gap-2 mb-2"
           >
-            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30">
-              Live Data
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <Badge>Live Data</Badge>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               Real-time updates
             </span>
           </motion.div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            City <span className="text-gradient">Dashboard</span>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+            City <span className="text-emerald-700">Dashboard</span>
           </h1>
-          <p className="text-gray-400 mt-2">Live view of civic issues reported in your area.</p>
+          <p className="mt-2 text-slate-500 text-lg">Live view of civic issues reported in your area.</p>
         </div>
         
         {/* Filter Pills with Animation */}
         <motion.div 
-          className="flex flex-wrap gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10"
+          className={`flex flex-wrap gap-2 p-1.5 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -178,7 +185,7 @@ const Dashboard = () => {
               className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 filter === f 
                   ? 'text-white' 
-                  : 'text-gray-400 hover:text-white'
+                  : (isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -189,7 +196,7 @@ const Dashboard = () => {
               {filter === f && (
                 <motion.div
                   layoutId="activeFilter"
-                  className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl"
+                  className="absolute inset-0 bg-emerald-600 rounded-xl"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
@@ -204,7 +211,7 @@ const Dashboard = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* Stats Overview */}
           <motion.div 
-            className="glass-premium p-6 rounded-3xl"
+            className={`p-6 rounded-3xl ${isDark ? 'glass-premium' : 'bg-white border border-gray-100 shadow-lg'}`}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -218,34 +225,38 @@ const Dashboard = () => {
                 value={complaints.length} 
                 label="Total Issues" 
                 icon={Layers} 
-                color="from-blue-400 to-blue-600"
+                color="from-emerald-400 to-emerald-600"
                 delay={0.1}
+                loading={loading}
               />
               <StatCard 
                 value={resolvedCount} 
                 label="Resolved" 
                 icon={CheckCircle2} 
-                color="from-green-400 to-green-600"
+                color="from-emerald-400 to-emerald-600"
                 delay={0.2}
+                loading={loading}
               />
               <StatCard 
                 value={pendingCount} 
                 label="Pending" 
                 icon={Clock} 
-                color="from-orange-400 to-orange-600"
+                color="from-amber-400 to-amber-600"
                 delay={0.3}
+                loading={loading}
               />
               <StatCard 
                 value={inProgressCount} 
                 label="In Progress" 
                 icon={Zap} 
-                color="from-cyan-400 to-cyan-600"
+                color="from-blue-400 to-blue-600"
                 delay={0.4}
+                loading={loading}
               />
             </div>
             
             {/* Priority Alert */}
-            {highPriorityCount > 0 && (
+            {!loading && highPriorityCount > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -264,7 +275,7 @@ const Dashboard = () => {
 
           {/* Enhanced Map */}
           <motion.div 
-            className="glass-premium p-5 rounded-3xl relative overflow-hidden"
+            className={`p-5 rounded-3xl relative overflow-hidden ${isDark ? 'glass-premium' : 'bg-white border border-gray-100 shadow-lg'}`}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -288,9 +299,9 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="h-80 rounded-2xl overflow-hidden shadow-inner border border-white/5 relative" style={darkMapFilterStyle}>
+            <div className={`h-80 rounded-2xl overflow-hidden shadow-inner border relative ${isDark ? 'border-white/5' : 'border-gray-200'}`} style={isDark ? darkMapFilterStyle : {}}>
               {!isLoaded ? (
-                <div className="w-full h-full flex items-center justify-center bg-slate-800/50">
+                <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-slate-800/50' : 'bg-gray-100'}`}>
                   <motion.div
                     className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full"
                     animate={{ rotate: 360 }}
@@ -353,7 +364,7 @@ const Dashboard = () => {
               )}
               
               {/* Map Overlay Effect */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0B0F19]/50 to-transparent" />
+              {isDark && <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0B0F19]/50 to-transparent" />}
             </div>
           </motion.div>
         </div>
@@ -361,24 +372,34 @@ const Dashboard = () => {
         {/* Complaint Cards Grid */}
         <div className="lg:col-span-2">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <motion.div
-                className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              <p className="text-gray-500 animate-pulse">Loading complaints...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-5 rounded-2xl border bg-white shadow-sm flex flex-col gap-4">
+                  <div className="h-48 shimmer rounded-xl w-full"></div>
+                  <div className="flex gap-2">
+                    <div className="w-16 h-6 shimmer rounded-full"></div>
+                    <div className="w-20 h-6 shimmer rounded-full"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-5 shimmer rounded w-3/4"></div>
+                    <div className="h-4 shimmer rounded w-1/2"></div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <div className="w-24 h-4 shimmer rounded"></div>
+                    <div className="w-8 h-8 shimmer rounded-full"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
-            <motion.div 
-              className="glass-premium p-12 text-center text-gray-400 border border-dashed border-gray-600 rounded-3xl"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <Filter className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg">No complaints found matching this filter.</p>
-              <p className="text-sm text-gray-500 mt-2">Try selecting a different filter</p>
-            </motion.div>
+            <EmptyState 
+              icon={CheckCircle2}
+              heading="You're all caught up!"
+              message="There are no complaints matching your current filter criteria."
+              ctaText="View all complaints"
+              ctaAction={() => setFilter('All')}
+              isDark={isDark}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filtered.map((complaint, index) => (

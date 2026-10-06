@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Sparkles, Loader2, Trash2, ChevronDown, Mic, MicOff, Volume2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const AIChatbot = () => {
   const { isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark'; // Keeping for compatibility if needed, but styling will be forced light/emerald
   const [messages, setMessages] = useState([
     { 
       id: 1, 
@@ -178,43 +181,18 @@ const AIChatbot = () => {
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             onClick={() => setIsOpen(true)}
             className="fixed bottom-8 right-8 z-40 group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             {/* Button with AI Avatar */}
-            <div className="relative w-16 h-16 bg-[#0B0F19] rounded-full shadow-xl shadow-blue-500/30 flex items-center justify-center overflow-hidden border border-blue-500/30">
-              {/* Floating animation wrapper */}
-              <motion.div
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, 3, -3, 0]
-                }}
-                transition={{ 
-                  duration: 3, 
-                  repeat: Infinity, 
-                  ease: "easeInOut" 
-                }}
-                className="relative w-full h-full flex items-center justify-center"
-              >
-                <img 
-                  src="/AI-Face.png" 
-                  alt="AI Assistant" 
-                  className="w-14 h-14 object-cover rounded-full bg-transparent" 
-                  style={{ 
-                    mixBlendMode: 'screen',
-                    filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))'
-                  }}
-                  onError={(e) => {e.target.style.display='none'; e.target.nextSibling.style.display='block'}} 
-                />
-                <MessageCircle className="w-7 h-7 text-white hidden" />
-              </motion.div>
-              
+            <div className="relative w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center overflow-hidden border-2 border-emerald-500 hover:border-emerald-600 transition-colors">
+              <Bot className="w-8 h-8 text-emerald-600" />
             </div>
             
             {/* Pulse ring */}
             <motion.div
-              className="absolute inset-0 rounded-full border-2 border-blue-400/30"
-              animate={{ scale: [1, 1.3, 1.5], opacity: [0.4, 0.1, 0] }}
+              className="absolute inset-0 rounded-full border-2 border-emerald-400/50"
+              animate={{ scale: [1, 1.2, 1.4], opacity: [0.5, 0.2, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
           </motion.button>
@@ -225,55 +203,28 @@ const AIChatbot = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             className="fixed bottom-8 right-8 w-[380px] h-[550px] z-50"
           >
-            <div className="relative w-full h-full glass-premium rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-              {/* Background glow */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
-              
+            <div className="relative w-full h-full rounded-2xl border shadow-2xl overflow-hidden flex flex-col bg-white border-gray-200">
               {/* Header */}
-              <div className="relative flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-b border-white/10">
+              <div className="relative flex items-center justify-between px-5 py-4 bg-emerald-50 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-transparent flex items-center justify-center shadow-lg overflow-hidden">
-                    <motion.div
-                      animate={{ 
-                        y: [0, -4, 0],
-                        rotate: [0, 2, -2, 0]
-                      }}
-                      transition={{ 
-                        duration: 2.5, 
-                        repeat: Infinity, 
-                        ease: "easeInOut" 
-                      }}
-                      className="w-full h-full flex items-center justify-center"
-                    >
-                      <img 
-                        src="/AI-Face.png" 
-                        alt="AI Assistant" 
-                        className="w-10 h-10 object-cover rounded-full"
-                        style={{ 
-                          mixBlendMode: 'screen',
-                          filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.4))'
-                        }}
-                        onError={(e) => {e.target.style.display='none'; e.target.nextSibling.style.display='flex'}} 
-                      />
-                    </motion.div>
-                    <Bot className="w-5 h-5 text-white hidden" />
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-emerald-100 overflow-hidden">
+                    <Bot className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-sm">Civic AI</h3>
+                    <h3 className="font-bold text-sm text-gray-900">Civic AI</h3>
                     <div className="flex items-center gap-1.5">
                       <motion.div
-                        className="w-2 h-2 bg-green-400 rounded-full"
+                        className="w-2 h-2 bg-emerald-500 rounded-full"
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ duration: 2, repeat: Infinity }}
                       />
-                      <span className="text-xs text-gray-400">Online • Voice Enabled</span>
+                      <span className="text-xs text-gray-500 font-medium">Online • Voice Enabled</span>
                     </div>
                   </div>
                 </div>
@@ -281,18 +232,18 @@ const AIChatbot = () => {
                 <div className="flex items-center gap-1">
                   <motion.button
                     onClick={clearChat}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg transition-colors hover:bg-gray-200 text-gray-500 hover:text-gray-900"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     title="Clear chat"
                   >
                     <Trash2 className="w-4 h-4" />
                   </motion.button>
                   <motion.button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg transition-colors hover:bg-gray-200 text-gray-500 hover:text-gray-900"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <X className="w-5 h-5" />
                   </motion.button>
@@ -300,11 +251,11 @@ const AIChatbot = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 {messages.map((msg) => (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -313,33 +264,21 @@ const AIChatbot = () => {
                       {/* Avatar */}
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${
                         msg.type === 'user' 
-                          ? 'bg-purple-500/20' 
-                          : 'bg-transparent'
+                          ? 'bg-emerald-100'
+                          : 'bg-emerald-50 border border-emerald-100'
                       }`}>
                         {msg.type === 'user' ? (
-                          <User className="w-4 h-4 text-purple-400" />
+                          <User className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <>
-                            <img 
-                              src="/AI-Face.png" 
-                              alt="AI" 
-                              className="w-8 h-8 object-cover rounded-full"
-                              style={{ 
-                                mixBlendMode: 'screen',
-                                filter: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.3))'
-                              }}
-                              onError={(e) => {e.target.style.display='none'; e.target.nextSibling.style.display='flex'}} 
-                            />
-                            <Sparkles className="w-4 h-4 text-white hidden" />
-                          </>
+                          <Bot className="w-5 h-5 text-emerald-600" />
                         )}
                       </div>
                       
                       {/* Message bubble */}
                       <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         msg.type === 'user'
-                          ? 'bg-purple-500/20 text-white rounded-br-md border border-purple-500/20'
-                          : 'bg-white/5 text-gray-200 rounded-bl-md border border-white/10'
+                          ? 'bg-emerald-600 text-white rounded-br-sm border border-emerald-700 shadow-sm'
+                          : 'bg-gray-50 text-gray-800 rounded-bl-sm border border-gray-200 shadow-sm'
                       }`}>
                         {msg.text}
                       </div>
@@ -355,16 +294,16 @@ const AIChatbot = () => {
                     className="flex justify-start"
                   >
                     <div className="flex gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-white" />
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                        <Bot className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 rounded-bl-md">
+                      <div className="px-4 py-3 rounded-2xl border rounded-bl-md bg-gray-50 border-gray-200 shadow-sm">
                         <div className="flex gap-1">
                           {[0, 1, 2].map((i) => (
                             <motion.div
                               key={i}
-                              className="w-2 h-2 bg-blue-400 rounded-full"
-                              animate={{ y: [0, -6, 0] }}
+                              className="w-2 h-2 bg-emerald-400 rounded-full"
+                              animate={{ y: [0, -4, 0] }}
                               transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
                             />
                           ))}
@@ -377,7 +316,7 @@ const AIChatbot = () => {
               </div>
 
               {/* Input with Voice */}
-              <div className="relative p-4 border-t border-white/10 bg-black/20">
+              <div className={`relative p-4 border-t ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
                 {/* Voice Recording Indicator */}
                 <AnimatePresence>
                   {isListening && (
@@ -412,10 +351,10 @@ const AIChatbot = () => {
                   {/* Voice Button */}
                   <motion.button
                     onClick={toggleVoice}
-                    className={`px-3 py-3 rounded-xl font-medium text-sm flex items-center justify-center transition-all ${
+                    className={`px-3 py-3 rounded-xl font-medium text-sm flex items-center justify-center transition-all border ${
                       isListening
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-lg shadow-red-500/20'
-                        : 'bg-white/5 border border-white/10 text-gray-400 hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/10'
+                        ? 'bg-red-500/20 text-red-400 border-red-500/30 shadow-lg shadow-red-500/20'
+                        : isDark ? 'bg-white/5 border-white/10 text-gray-400 hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/10' : 'bg-white border-gray-300 text-gray-600 hover:text-blue-600 hover:border-blue-500 hover:bg-blue-50'
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -438,10 +377,10 @@ const AIChatbot = () => {
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder={isListening ? "🎤 Listening..." : "Ask me anything..."}
-                      className={`w-full bg-white/5 border rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full border rounded-xl px-4 py-3 pr-12 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                         isListening 
                           ? 'border-red-500/30 focus:ring-red-500/50' 
-                          : 'border-white/10 focus:ring-blue-500/50 focus:border-blue-500/30'
+                          : 'bg-white text-gray-900 border-gray-300 focus:ring-emerald-500 focus:border-emerald-500'
                       }`}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -453,8 +392,8 @@ const AIChatbot = () => {
                     disabled={!input.trim() || isTyping}
                     className={`px-4 py-3 rounded-xl font-medium text-sm flex items-center justify-center transition-all ${
                       input.trim() && !isTyping
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25'
-                        : 'bg-white/5 text-gray-500 cursor-not-allowed'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                     whileHover={input.trim() && !isTyping ? { scale: 1.05 } : {}}
                     whileTap={input.trim() && !isTyping ? { scale: 0.95 } : {}}
@@ -473,7 +412,7 @@ const AIChatbot = () => {
                     <motion.button
                       key={suggestion}
                       onClick={() => setInput(suggestion)}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all whitespace-nowrap"
+                      className="flex-shrink-0 px-3 py-1.5 rounded-full border text-xs transition-all whitespace-nowrap bg-white border-gray-200 text-gray-600 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >

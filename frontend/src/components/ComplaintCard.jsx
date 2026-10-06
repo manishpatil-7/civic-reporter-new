@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ThumbsUp, MapPin, Clock, TrendingUp, ExternalLink } from 'lucide-react';
 import StatusTracker from './StatusTracker';
+import { useTheme } from '../context/ThemeContext';
+import Badge from './Badge';
 
 const severityConfig = {
   High: { 
@@ -30,29 +32,22 @@ const severityConfig = {
 const statusConfig = {
   'Pending': { 
     icon: '⏳', 
-    bg: 'bg-yellow-500/20', 
-    text: 'text-yellow-300',
-    border: 'border-yellow-500/30',
     pulse: true
   },
   'In Progress': { 
-    icon: '�', 
-    bg: 'bg-blue-500/20', 
-    text: 'text-blue-300',
-    border: 'border-blue-500/30',
+    icon: '🚀', 
     pulse: true
   },
   'Resolved': { 
     icon: '✅', 
-    bg: 'bg-green-500/20', 
-    text: 'text-green-300',
-    border: 'border-green-500/30',
     pulse: false
   },
 };
 
 const ComplaintCard = ({ complaint }) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  // Using forced light theme as per UI spec
 
   const displayAddress = complaint.locationAddress || 
     (complaint.location && Array.isArray(complaint.location)
@@ -69,10 +64,8 @@ const ComplaintCard = ({ complaint }) => {
       whileHover={{ scale: 1.02 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
     >
-      {/* Glow Effect */}
-      <div className={`absolute -inset-0.5 bg-gradient-to-r ${severityStyle.gradient} rounded-3xl blur opacity-0 group-hover:opacity-100 transition duration-500`} />
-      
-      <div className="relative h-full glass-premium overflow-hidden rounded-3xl border border-white/10 group-hover:border-white/20 transition-all duration-300">
+      {/* Subtle border and shadow for depth instead of glow */}
+      <div className="relative h-full overflow-hidden rounded-2xl border bg-white border-gray-200 shadow-sm hover:shadow-lg hover:border-emerald-300 transition-all duration-300">
         {/* Image Section */}
         <div className="relative h-52 overflow-hidden">
           <motion.img
@@ -84,18 +77,15 @@ const ComplaintCard = ({ complaint }) => {
           />
           
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent" />
           
           {/* Status Badge */}
           <div className="absolute top-4 right-4">
-            <motion.span 
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border backdrop-blur-md ${activeStatus.bg} ${activeStatus.text} ${activeStatus.border}`}
-              animate={activeStatus.pulse ? { scale: [1, 1.05, 1] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <span>{activeStatus.icon}</span>
-              <span>{complaint.status || 'Pending'}</span>
-            </motion.span>
+            <motion.div animate={activeStatus.pulse ? { scale: [1, 1.05, 1] } : {}} transition={{ duration: 2, repeat: Infinity }}>
+              <Badge icon={<span>{activeStatus.icon}</span>}>
+                {complaint.status || 'Pending'}
+              </Badge>
+            </motion.div>
           </div>
           
           {/* Bottom Overlay */}
@@ -132,9 +122,9 @@ const ComplaintCard = ({ complaint }) => {
           
           {/* Footer Info */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs text-gray-400">
+            <div className="flex items-center gap-4 text-xs text-gray-500">
               <motion.div 
-                className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
+                className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors"
                 whileHover={{ x: 2 }}
               >
                 <MapPin className="w-3.5 h-3.5" />
@@ -149,18 +139,15 @@ const ComplaintCard = ({ complaint }) => {
             
             {/* Upvotes */}
             <motion.div 
-              className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 group-hover:border-blue-500/30 group-hover:bg-blue-500/10 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border group-hover:border-emerald-500/30 group-hover:bg-emerald-50 transition-all bg-gray-50 border-gray-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <ThumbsUp className="w-3.5 h-3.5 text-blue-400" />
-              <span className="font-bold text-white text-xs">{complaint.upvotes || 0}</span>
+              <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="font-bold text-xs text-gray-800">{complaint.upvotes || 0}</span>
             </motion.div>
           </div>
         </div>
-        
-        {/* Hover Gradient Overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-t ${severityStyle.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
       </div>
     </motion.div>
   );

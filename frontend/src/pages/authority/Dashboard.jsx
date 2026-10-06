@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuthorityStats, getAuthorityComplaints } from '../../services/authorityApi';
 import { motion } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
+import Badge from '../../components/Badge';
 
 const AuthorityDashboard = () => {
   const [stats, setStats] = useState({ total: 0, open: 0, inProgress: 0, resolved: 0 });
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -36,7 +40,7 @@ const AuthorityDashboard = () => {
   return (
     <div className="min-h-screen pt-24 px-6 max-w-7xl mx-auto pb-24">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Authority Dashboard</h1>
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Authority Dashboard</h1>
         <button 
           onClick={() => { localStorage.removeItem('authorityToken'); navigate('/authority/login'); }}
           className="bg-red-500/20 text-red-300 hover:bg-red-500/30 px-4 py-2 rounded-lg transition-colors"
@@ -52,8 +56,8 @@ const AuthorityDashboard = () => {
           { label: 'In Progress', value: stats.inProgress, color: 'text-purple-400' },
           { label: 'Resolved', value: stats.resolved, color: 'text-green-400' },
         ].map((stat, i) => (
-          <div key={i} className="bg-slate-800/50 p-6 rounded-xl border border-white/10 text-center">
-            <h3 className="text-gray-400 text-sm font-medium mb-2">{stat.label}</h3>
+          <div key={i} className={`p-6 rounded-xl border text-center ${isDark ? 'bg-slate-800/50 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{stat.label}</h3>
             <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
@@ -66,7 +70,7 @@ const AuthorityDashboard = () => {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                filter === f ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
+                filter === f ? 'bg-blue-600 text-white' : isDark ? 'bg-slate-800 text-gray-400 hover:bg-slate-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
               }`}
             >
               {f === '' ? 'All Status' : f.replace('_', ' ')}
@@ -74,7 +78,7 @@ const AuthorityDashboard = () => {
           ))}
         </div>
         
-        <div className="flex space-x-2 overflow-x-auto pb-2 border-l border-white/10 pl-0 md:pl-4">
+        <div className={`flex space-x-2 overflow-x-auto pb-2 border-l pl-0 md:pl-4 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           {[
             { id: '', label: 'All Authorities' },
             { id: 'municipal_corporation', label: 'Municipal Corp' },
@@ -85,7 +89,7 @@ const AuthorityDashboard = () => {
               key={a.id}
               onClick={() => setAuthFilter(a.id)}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                authFilter === a.id ? 'bg-purple-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
+                authFilter === a.id ? 'bg-purple-600 text-white' : isDark ? 'bg-slate-800 text-gray-400 hover:bg-slate-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
               }`}
             >
               {a.label}
@@ -98,29 +102,25 @@ const AuthorityDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {complaints.map((c, i) => (
           <motion.div key={c._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="bg-slate-800/50 border border-white/10 rounded-xl overflow-hidden flex flex-col"
+            className={`border rounded-xl overflow-hidden flex flex-col ${isDark ? 'bg-slate-800/50 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}
           >
             <img src={c.imageUrl} alt={c.problemType} className="w-full h-48 object-cover" />
             <div className="p-4 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2 gap-2">
-                <h3 className="font-bold text-lg text-white leading-tight">{c.problemType}</h3>
+                <h3 className={`font-bold text-lg leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{c.problemType}</h3>
                 <div className="flex flex-col items-end gap-1">
-                  <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${c.status === 'RESOLVED' || c.status === 'Resolved' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
-                    {c.status}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full whitespace-nowrap">
-                    {c.authorityType?.replace('_', ' ') || 'Unknown'}
-                  </span>
+                  <Badge>{c.status}</Badge>
+                  <Badge>{c.authorityType?.replace('_', ' ') || 'Unknown'}</Badge>
                 </div>
               </div>
-              <p className="text-sm text-gray-400 mb-4 flex-1">{c.location?.address || `${c.area}, ${c.city}`}</p>
-              <button onClick={() => navigate(`/authority/complaints/${c._id}`)} className="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg transition-colors text-sm">
+              <p className={`text-sm mb-4 flex-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.location?.address || `${c.area}, ${c.city}`}</p>
+              <button onClick={() => navigate(`/authority/complaints/${c._id}`)} className={`w-full py-2 rounded-lg transition-colors text-sm ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}>
                 View & Update
               </button>
             </div>
           </motion.div>
         ))}
-        {complaints.length === 0 && <div className="col-span-full text-center py-12 text-gray-400">No complaints found.</div>}
+        {complaints.length === 0 && <div className={`col-span-full text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>No complaints found.</div>}
       </div>
     </div>
   );

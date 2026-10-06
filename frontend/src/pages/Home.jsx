@@ -1,461 +1,386 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Map, FileText, Camera, Sparkles, Zap, Shield, Activity } from 'lucide-react';
-import TiltCard from '../components/TiltCard';
-import MagneticButton from '../components/MagneticButton';
+import {
+  Camera, MapPin, Search, CheckCircle2, ArrowRight,
+  Zap, ShieldCheck, Users, TrendingUp, Clock,
+  AlertTriangle, Droplets, Trash2, Lightbulb, Construction,
+  TreePine, Phone, Wifi, CircleDot
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Typewriter Effect Hook
-const useTypewriter = (text, speed = 50, delay = 0) => {
-  const [displayText, setDisplayText] = useState('');
-  const [showCursor, setShowCursor] = useState(true);
-
-  useEffect(() => {
-    let index = 0;
-    const timeout = setTimeout(() => {
-      const interval = setInterval(() => {
-        if (index < text.length) {
-          setDisplayText(text.slice(0, index + 1));
-          index++;
-        } else {
-          clearInterval(interval);
-          setTimeout(() => setShowCursor(false), 1000);
-        }
-      }, speed);
-      return () => clearInterval(interval);
-    }, delay);
-    return () => clearTimeout(timeout);
-  }, [text, speed, delay]);
-
-  return { displayText, showCursor };
+/* ---- Framer Motion Variants ---- */
+const fadeInUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } },
 };
 
-// Floating 3D Element Component
-const FloatingElement = ({ children, delay = 0, duration = 6, yOffset = 20 }) => (
-  <motion.div
-    animate={{
-      y: [0, -yOffset, 0],
-      rotateY: [0, 5, 0, -5, 0],
-      rotateX: [0, -3, 0, 3, 0],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay,
-    }}
-    style={{ transformStyle: 'preserve-3d' }}
-  >
-    {children}
-  </motion.div>
-);
-
-// Parallax Wrapper
-const ParallaxSection = ({ children, offset = 50 }) => {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-
-  const y = useTransform(scrollYProgress, [0, 1], [offset, -offset]);
-
-  return (
-    <motion.div ref={ref} style={{ y }}>
-      {children}
-    </motion.div>
-  );
+const stagger = {
+  visible: { transition: { staggerChildren: 0.08 } },
 };
+
+/* ---- Step Data (Workflow) ---- */
+const WORKFLOW_STEPS = [
+  { icon: Camera, title: 'Capture Evidence', desc: 'Upload a photo of the civic issue. GPS or EXIF data is extracted automatically.' },
+  { icon: Zap, title: 'AI Analysis', desc: 'Our AI identifies the issue type, severity, and generates a formal complaint letter.' },
+  { icon: MapPin, title: 'Location Pinned', desc: 'Your location is used to find the exact city, ward, and jurisdiction.' },
+  { icon: Users, title: 'Authority Routed', desc: 'The complaint is directed to the correct municipal body — panchayat, council, or corporation.' },
+  { icon: Clock, title: 'Track Progress', desc: 'Get real-time status updates: Pending → In Progress → Resolved.' },
+  { icon: CheckCircle2, title: 'Issue Resolved', desc: 'Close the loop with before/after photos once the authority resolves the issue.' },
+];
+
+/* ---- Issue Categories ---- */
+const CATEGORIES = [
+  { icon: Construction, label: 'Potholes & Roads', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+  { icon: Trash2, label: 'Garbage & Waste', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+  { icon: Droplets, label: 'Drainage & Flooding', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { icon: Lightbulb, label: 'Street Lights', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+  { icon: Droplets, label: 'Water Supply', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200' },
+  { icon: TreePine, label: 'Parks & Trees', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  { icon: Phone, label: 'Public Utilities', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+  { icon: Wifi, label: 'Other Issues', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+];
+
+/* ---- Platform Features ---- */
+const FEATURES = [
+  {
+    icon: Zap,
+    title: 'AI-Powered Analysis',
+    desc: 'Automated issue detection, severity scoring, and formal complaint letter generation in seconds.',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Duplicate Prevention',
+    desc: 'Semantic search detects existing complaints for the same issue, reducing redundancy.',
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+  },
+  {
+    icon: MapPin,
+    title: 'Smart Authority Routing',
+    desc: 'GPS + jurisdiction mapping routes every complaint to the correct gram panchayat, council, or corporation.',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Real-Time Status',
+    desc: 'Track every complaint from submission to resolution with a timestamped status timeline.',
+    color: 'text-purple-600',
+    bg: 'bg-purple-50',
+  },
+];
 
 const Home = () => {
-  const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"]
-  });
-
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
-  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
-
-  const { displayText: titleText } = useTypewriter('Report Civic Issues', 60, 500);
-  const { displayText: subtitleText, showCursor } = useTypewriter('with AI Precision', 60, 1200);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 40, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
-
-  const stats = [
-    { value: '10K+', label: 'Issues Reported', icon: Activity },
-    { value: '85%', label: 'Resolution Rate', icon: Zap },
-    { value: '50+', label: 'Cities Covered', icon: Map },
-  ];
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen pt-24 font-sans relative overflow-x-hidden">
-      {/* 3D Floating Elements - Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <FloatingElement delay={0} duration={8} yOffset={30}>
-          <div className="absolute top-[20%] right-[10%] w-32 h-32 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-2xl blur-sm border border-white/10"
-            style={{ transform: 'rotateY(15deg) rotateX(-10deg)' }} />
-        </FloatingElement>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
 
-        <FloatingElement delay={2} duration={10} yOffset={25}>
-          <div className="absolute top-[40%] left-[5%] w-24 h-24 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-full blur-sm border border-white/10"
-            style={{ transform: 'rotateY(-20deg) rotateX(15deg)' }} />
-        </FloatingElement>
+      {/* ============================================================
+          HERO SECTION
+          ============================================================ */}
+      <section className="pt-28 pb-20 px-4 border-b border-gray-100">
+        <div className="max-w-4xl mx-auto text-center">
 
-        <FloatingElement delay={1} duration={7} yOffset={35}>
-          <div className="absolute bottom-[30%] right-[15%] w-20 h-20 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl blur-sm border border-white/10"
-            style={{ transform: 'rotateY(25deg) rotateX(-5deg)' }} />
-        </FloatingElement>
-
-        {/* Glowing orbs */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 4, repeat: Infinity }}
-          className="absolute top-[15%] left-[20%] w-64 h-64 bg-blue-500/10 rounded-full blur-[100px]"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-          className="absolute bottom-[20%] right-[25%] w-72 h-72 bg-purple-500/10 rounded-full blur-[100px]"
-        />
-      </div>
-
-      {/* Hero Section with Parallax */}
-      <motion.div
-        ref={heroRef}
-        style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
-        className="relative min-h-[90vh] flex items-center"
-      >
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-7xl mx-auto px-6 text-center relative z-10"
-        >
-          {/* Badge with Glow */}
-          <motion.div variants={itemVariants} className="inline-block mb-6">
-            <motion.span
-              className="glass-premium px-5 py-2.5 text-sm font-semibold rounded-full text-blue-300 border border-blue-500/30 inline-flex items-center gap-2 glow-blue"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-            >
-              <Sparkles className="w-4 h-4 text-blue-400" />
-              AI-Powered Civic Reporting
-            </motion.span>
-          </motion.div>
-
-          {/* Main Heading with Typewriter */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight">
-              <span className="block mb-2">{titleText}</span>
-              <span className="block text-gradient relative inline-block">
-                {subtitleText}
-                {showCursor && (
-                  <motion.span
-                    className="absolute -right-1 top-0 w-1 h-full bg-blue-500"
-                    animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                  />
-                )}
-              </span>
-            </h1>
-          </motion.div>
-
-          {/* Subtitle */}
-          <motion.p
-            variants={itemVariants}
-            className="text-lg sm:text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed"
+          {/* Platform badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-sm font-semibold text-emerald-700 mb-6"
           >
-            Empowering citizens to build better cities.
-            <span className="text-blue-300">Snap a photo</span> of civic issues,
-            and our <span className="text-purple-300">AI</span> will automatically
-            classify, localize, and analyze them.
+            <CircleDot className="w-3.5 h-3.5" />
+            CivicTech Platform for India
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-5"
+          >
+            Report civic issues.{' '}
+            <span className="text-emerald-700">Route them right.</span>
+          </motion.h1>
+
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed"
+          >
+            Upload a photo, let AI analyze the problem, and have your complaint automatically routed
+            to the right municipal authority — with a tracking number.
           </motion.p>
 
-          {/* CTA Buttons with Magnetic Effect */}
+          {/* CTAs */}
           <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            {!isAdmin && (
-              <MagneticButton strength={0.2}>
-                <motion.button
-                  onClick={() => navigate('/submit')}
-                  className="relative group px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 text-white font-bold rounded-2xl overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-500 to-blue-600"
-                    initial={{ x: '100%' }}
-                    whileHover={{ x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                  <span className="relative flex items-center gap-3">
-                    <Camera className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                    <span>Report an Issue</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </motion.button>
-              </MagneticButton>
-            )}
+            <button
+              onClick={() => navigate(user ? '/submit' : '/signup')}
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-base rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+            >
+              <Camera className="w-5 h-5" />
+              <span>Report an Issue</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
 
-            <MagneticButton strength={0.15}>
-              <motion.button
-                onClick={() => navigate('/dashboard')}
-                className="group px-8 py-4 glass-premium text-white font-bold rounded-2xl border border-white/10 hover:border-white/20 transition-all"
-                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <span className="flex items-center gap-3">
-                  <Map className="w-5 h-5 text-blue-400" />
-                  <span>View Dashboard</span>
-                </span>
-              </motion.button>
-            </MagneticButton>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-base rounded-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+            >
+              <Search className="w-5 h-5" />
+              <span>View Live Dashboard</span>
+            </button>
           </motion.div>
 
-          {/* Stats Section */}
+          {/* Quick Info Strip */}
           <motion.div
-            variants={itemVariants}
-            className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 text-sm text-slate-500"
           >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2 + index * 0.2 }}
-              >
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <stat.icon className="w-5 h-5 text-blue-400" />
-                  <span className="text-3xl md:text-4xl font-bold text-gradient stat-counter">{stat.value}</span>
-                </div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-              </motion.div>
-            ))}
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Free to use
+            </span>
+            <span className="hidden sm:block text-slate-300">|</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              No forms — just a photo
+            </span>
+            <span className="hidden sm:block text-slate-300">|</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Supports 13 Indian languages
+            </span>
           </motion.div>
-        </motion.div>
+        </div>
+      </section>
 
-        {/* Scroll Indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <div className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center pt-2">
-            <motion.div
-              className="w-1.5 h-1.5 bg-white/60 rounded-full"
-              animate={{ y: [0, 12, 0], opacity: [1, 0.3, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* Features Section with Parallax */}
-      <ParallaxSection offset={30}>
-        <div className="max-w-7xl mx-auto px-6 py-24">
+      {/* ============================================================
+          HOW IT WORKS
+          ============================================================ */}
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
           <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={fadeInUp}
+            className="text-center mb-14"
           >
-            <span className="text-blue-400 font-semibold text-sm tracking-wider uppercase">How It Works</span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-3">
-              Three Steps to <span className="text-gradient">Better Cities</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 mb-3 block">
+              How It Works
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              From photo to resolution in 6 steps
             </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Civic Reporter handles the complexity — you just capture the issue.
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Camera,
-                step: '01',
-                title: 'Snap a Photo',
-                desc: 'Capture any civic issue clearly. Our AI recognizes potholes, broken lights, garbage, and more.',
-                color: 'blue',
-                delay: 0
-              },
-              {
-                icon: FileText,
-                step: '02',
-                title: 'AI Auto-Fills',
-                desc: 'Advanced AI generates formal complaints, extracts severity levels, and translates to local languages.',
-                color: 'purple',
-                delay: 0.2
-              },
-              {
-                icon: Shield,
-                step: '03',
-                title: 'Track & Resolve',
-                desc: 'Monitor progress on the live city map, upvote urgent issues, and celebrate resolutions.',
-                color: 'green',
-                delay: 0.4
-              }
-            ].map((feature, index) => (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {WORKFLOW_STEPS.map((step, i) => (
               <motion.div
-                key={feature.step}
-                initial={{ opacity: 0, y: 50 }}
+                key={step.title}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: feature.delay }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
               >
-                <TiltCard className="h-full" tiltAmount={8}>
-                  <div className="glass-premium p-8 rounded-3xl h-full relative overflow-hidden group hover-glow">
-                    {/* Step Number */}
-                    <div className={`absolute top-4 right-4 text-6xl font-bold text-${feature.color}-500/10`}>
-                      {feature.step}
+                <div className="bg-white border border-slate-100 rounded-3xl p-8 h-full flex flex-col gap-4 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-emerald-200 transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center shrink-0">
+                      <step.icon className="w-6 h-6 text-emerald-700" />
                     </div>
-
-                    {/* Icon with Glow */}
-                    <motion.div
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-${feature.color}-500/20 to-${feature.color}-600/20 flex items-center justify-center mb-6 glow-${feature.color}`}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
-                    >
-                      <feature.icon className={`w-8 h-8 text-${feature.color}-400`} />
-                    </motion.div>
-
-                    <h3 className="text-2xl font-bold mb-3 group-hover:text-gradient transition-all">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-400 leading-relaxed">
-                      {feature.desc}
-                    </p>
-
-                    {/* Hover Gradient */}
-                    <div className={`absolute inset-0 bg-gradient-to-br from-${feature.color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Step {i + 1}</span>
                   </div>
-                </TiltCard>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">{step.title}</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
-      </ParallaxSection>
+      </section>
 
-      {/* Tech Stack / Features Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-24">
-        <motion.div
-          className="glass-premium rounded-3xl p-8 md:p-12 relative overflow-hidden"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Background Decoration */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent" />
+      {/* ============================================================
+          WHAT CAN YOU REPORT
+          ============================================================ */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={fadeInUp}
+            className="text-center mb-12"
+          >
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 mb-3 block">
+              Issue Categories
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              What can you report?
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Any civic infrastructure or public services issue that needs government attention.
+            </p>
+          </motion.div>
 
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Powered by <span className="text-gradient">Cutting-Edge AI</span>
-              </h2>
-              <p className="text-gray-400 mb-8 text-lg">
-                Our platform leverages state-of-the-art machine learning models
-                to automatically detect, classify, and prioritize civic issues
-                with unprecedented accuracy.
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { label: 'Computer Vision', desc: 'YOLO-based object detection', icon: Sparkles },
-                  { label: 'Natural Language', desc: 'GPT-powered letter generation', icon: FileText },
-                  { label: 'Smart Detection', desc: 'Geolocation & duplicate checking', icon: Zap },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.label}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    whileHover={{ x: 10, backgroundColor: 'rgba(255,255,255,0.08)' }}
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{item.label}</p>
-                      <p className="text-sm text-gray-500">{item.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Animated Tech Visualization */}
-            <div className="relative h-64 md:h-96 w-full flex items-center justify-center mt-8 md:mt-0">
-              <FloatingElement delay={0} duration={8}>
-                <motion.div
-                  className="w-48 h-48 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl border border-white/10 backdrop-blur-sm flex items-center justify-center relative z-10"
-                  style={{ transform: 'rotateY(15deg) rotateX(-10deg)' }}
-                  whileHover={{ scale: 1.05 }}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={stagger}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+          >
+            {CATEGORIES.map((cat) => (
+              <motion.div key={cat.label} variants={fadeInUp}>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className={`w-full flex flex-col items-center gap-3 p-5 rounded-2xl border ${cat.bg} ${cat.border} hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-200 group`}
                 >
-                  <Activity className="w-16 h-16 text-blue-400" />
-                </motion.div>
-              </FloatingElement>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-white/80 ${cat.border} border`}>
+                    <cat.icon className={`w-5 h-5 ${cat.color}`} />
+                  </div>
+                  <span className={`text-sm font-semibold text-center leading-tight ${cat.color}`}>
+                    {cat.label}
+                  </span>
+                </button>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
-              {/* Orbiting Elements */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
-                {[0, 120, 240].map((deg, i) => (
-                  <motion.div
-                    key={deg}
-                    className="absolute w-4 h-4 bg-blue-400 rounded-full"
-                    animate={{
-                      x: [0, Math.cos((deg * Math.PI) / 180) * 120, 0],
-                      y: [0, Math.sin((deg * Math.PI) / 180) * 120, 0],
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                      ease: "linear"
-                    }}
-                    style={{ translateX: '-50%', translateY: '-50%' }}
-                  />
-                ))}
-              </div>
-            </div>
+      {/* ============================================================
+          PLATFORM FEATURES
+          ============================================================ */}
+      <section className="py-20 px-4 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={fadeInUp}
+            className="text-center mb-14"
+          >
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 mb-3 block">
+              Platform Capabilities
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Built for trust and accountability
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Every complaint is transparent, tracked, and routed to the accountable authority.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={stagger}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+          >
+            {FEATURES.map(f => (
+              <motion.div key={f.title} variants={fadeInUp}>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 flex gap-4 hover:shadow-md hover:border-gray-300 hover:-translate-y-1 transition-all duration-200">
+                  <div className={`w-11 h-11 ${f.bg} rounded-xl flex items-center justify-center shrink-0`}>
+                    <f.icon className={`w-5 h-5 ${f.color}`} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">{f.title}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          CTA SECTION
+          ============================================================ */}
+      <section className="py-24 px-4 bg-emerald-800 border-t border-emerald-900 relative overflow-hidden">
+        {/* Abstract Background Shapes */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-emerald-700/50 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-900/40 rounded-full blur-3xl"></div>
+        </div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeInUp}
+          className="max-w-2xl mx-auto text-center relative z-10"
+        >
+          <div className="inline-flex w-16 h-16 bg-emerald-700/50 rounded-2xl border border-emerald-600 items-center justify-center mb-6">
+            <AlertTriangle className="w-8 h-8 text-emerald-200" />
           </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
+            See a problem in your city?
+          </h2>
+          <p className="text-emerald-100 text-lg mb-10 leading-relaxed max-w-xl mx-auto">
+            It takes under 2 minutes to submit a complaint. No paperwork, no phone queues —
+            just a photo and your location.
+          </p>
+          <button
+            onClick={() => navigate(user ? '/submit' : '/signup')}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-white hover:bg-slate-50 text-emerald-800 font-bold text-base rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+          >
+            <Camera className="w-5 h-5" />
+            <span>Report an Issue Now</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          {!user && (
+            <p className="mt-6 text-sm text-emerald-200/70">
+              Free account required.{' '}
+              <button onClick={() => navigate('/login')} className="text-white hover:underline font-semibold">
+                Already have one? Sign in
+              </button>
+            </p>
+          )}
         </motion.div>
-      </div>
+      </section>
+
+      {/* ============================================================
+          FOOTER
+          ============================================================ */}
+      <footer className="py-8 px-4 bg-white border-t border-gray-200">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-400">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-emerald-600 rounded-md flex items-center justify-center">
+              <span className="text-white text-xs font-bold">C</span>
+            </div>
+            <span className="font-medium text-gray-600">Civic Reporter</span>
+            <span>© {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate('/dashboard')} className="hover:text-gray-700 transition-colors">Dashboard</button>
+            <button onClick={() => navigate('/login')} className="hover:text-gray-700 transition-colors">Login</button>
+            <button onClick={() => navigate('/authority/login')} className="hover:text-gray-700 transition-colors">Authority Portal</button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

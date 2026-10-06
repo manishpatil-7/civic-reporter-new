@@ -3,10 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { updateComplaintStatus } from '../../services/authorityApi';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
 
 const AuthorityComplaintDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [complaint, setComplaint] = useState(null);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,23 +48,23 @@ const AuthorityComplaintDetail = () => {
 
   return (
     <div className="min-h-screen pt-24 px-6 max-w-4xl mx-auto pb-24">
-      <button onClick={() => navigate(-1)} className="mb-6 text-gray-400 hover:text-white transition-colors">← Back to Dashboard</button>
+      <button onClick={() => navigate(-1)} className={`mb-6 transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>← Back to Dashboard</button>
       
-      <div className="bg-slate-800/50 p-6 rounded-2xl border border-white/10 mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">{complaint.problemType}</h1>
-        <p className="text-gray-400 mb-6">{complaint.location?.address || 'Location not provided'}</p>
+      <div className={`p-6 rounded-2xl border mb-8 ${isDark ? 'bg-slate-800/50 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{complaint.problemType}</h1>
+        <p className={`mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{complaint.location?.address || 'Location not provided'}</p>
         
         <div className="flex flex-col md:flex-row gap-8 mb-8">
           <div className="flex-1">
-            <img src={complaint.imageUrl} alt="Issue" className="w-full h-64 object-cover rounded-xl border border-white/10" />
+            <img src={complaint.imageUrl} alt="Issue" className={`w-full h-64 object-cover rounded-xl border ${isDark ? 'border-white/10' : 'border-gray-200'}`} />
           </div>
           <div className="flex-1 space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Status</label>
+              <label className={`block text-sm mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Status</label>
               <select 
                 value={status} 
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
+                className={`w-full border rounded-lg p-3 focus:outline-none focus:border-blue-500 ${isDark ? 'bg-slate-900 border-white/10 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}
               >
                 <option value="OPEN">OPEN</option>
                 <option value="IN_PROGRESS">IN_PROGRESS</option>
@@ -83,14 +86,14 @@ const AuthorityComplaintDetail = () => {
 
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-bold text-white mb-2">Description</h3>
-            <p className="text-gray-300 bg-slate-900/50 p-4 rounded-xl border border-white/5">{complaint.description}</p>
+            <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Description</h3>
+            <p className={`p-4 rounded-xl border ${isDark ? 'text-gray-300 bg-slate-900/50 border-white/5' : 'text-gray-800 bg-gray-50 border-gray-200'}`}>{complaint.description}</p>
           </div>
           
           {complaint.formalLetter && (
             <div>
-              <h3 className="text-lg font-bold text-white mb-2">Formal Letter</h3>
-              <pre className="text-gray-300 bg-slate-900/50 p-4 rounded-xl border border-white/5 whitespace-pre-wrap font-sans text-sm">{complaint.formalLetter}</pre>
+              <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Formal Letter</h3>
+              <pre className={`p-4 rounded-xl border whitespace-pre-wrap font-sans text-sm ${isDark ? 'text-gray-300 bg-slate-900/50 border-white/5' : 'text-gray-800 bg-gray-50 border-gray-200'}`}>{complaint.formalLetter}</pre>
             </div>
           )}
         </div>

@@ -18,6 +18,7 @@ import AdvancedMarker from '../components/AdvancedMarker';
 import html2pdf from 'html2pdf.js';
 import PDFReport from '../components/Admin/PDFReport';
 import { copyToClipboard } from '../utils/clipboard';
+import { useTheme } from '../context/ThemeContext';
 import {
   getComplaints,
   getUsers,
@@ -32,6 +33,7 @@ import {
   updateUserReputation,
   uploadImage
 } from '../services/api';
+import Badge from '../components/Badge';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
 const STATUS_COLORS = { 'Pending': '#f97316', 'In Progress': '#3b82f6', 'Resolved': '#22c55e' };
@@ -41,6 +43,8 @@ const AnimatedCounter = ({ value, duration = 2 }) => {
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => Math.round(latest));
   const [displayValue, setDisplayValue] = useState(0);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const controls = animate(count, value, {
@@ -113,6 +117,8 @@ const darkMapFilterStyle = {
 
 const Admin = () => {
   const { userData } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'complaints' | 'flagged' | 'map' | 'users'
   
   // Complaints State
@@ -453,7 +459,7 @@ const Admin = () => {
 
   if (loadingComplaints) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center pt-24 text-white">
+      <div className={`min-h-screen flex flex-col items-center justify-center pt-24 ${isDark ? 'text-white' : 'text-gray-900'}`}>
         <motion.div
           animate={{ 
             scale: [1, 1.2, 1],
@@ -467,7 +473,7 @@ const Admin = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-gray-400 text-sm"
+          className={isDark ? 'text-gray-400 text-sm' : 'text-gray-600 text-sm'}
         >
           Loading Admin Dashboard...
         </motion.p>
@@ -486,14 +492,14 @@ const Admin = () => {
       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium relative overflow-hidden ${
         activeTab === id 
         ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/20' 
-        : 'text-gray-400 hover:text-white hover:bg-white/5'
+        : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
       }`}
     >
       {/* Active indicator bar */}
       {activeTab === id && (
         <motion.div
           layoutId="activeTab"
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"
+          className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${isDark ? 'bg-white' : 'bg-orange-500'}`}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
@@ -528,14 +534,14 @@ const Admin = () => {
       </div>
 
       {/* Sidebar */}
-      <aside className="w-full md:w-64 shrink-0 space-y-2 glass-panel p-4 h-[calc(100vh-120px)] sticky top-24 rounded-2xl flex flex-col hidden-scrollbar overflow-y-auto">
-        <div className="pb-6 mb-2 border-b border-white/10 flex items-center space-x-3 px-2">
+      <aside className={`w-full md:w-64 shrink-0 space-y-2 p-4 h-[calc(100vh-120px)] sticky top-24 rounded-2xl flex flex-col hidden-scrollbar overflow-y-auto ${isDark ? 'glass-panel' : 'bg-white shadow-sm border border-gray-200'}`}>
+        <div className={`pb-6 mb-2 border-b flex items-center space-x-3 px-2 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
               <ShieldCheck className="w-6 h-6 text-orange-400" />
            </div>
            <div>
-              <h2 className="font-bold text-white leading-tight">Admin System</h2>
-              <p className="text-[10px] text-gray-400 font-mono">v2.0 Advanced</p>
+              <h2 className={`font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Admin System</h2>
+              <p className={`text-[10px] font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>v2.0 Advanced</p>
            </div>
         </div>
 
@@ -553,7 +559,7 @@ const Admin = () => {
           {/* TAB: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <motion.div key="dashboard" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-6">Analytics Overview</h2>
+              <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Analytics Overview</h2>
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard value={complaints.length} label="Total Issues" icon={Activity} color="blue" delay={0} />
@@ -565,8 +571,8 @@ const Admin = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-80">
-                <div className="glass-panel p-4 rounded-2xl border-white/10 flex flex-col">
-                   <h3 className="text-md font-bold text-gray-300 mb-2 px-2">Complaints by Status</h3>
+                <div className={`p-4 rounded-2xl flex flex-col ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200 shadow-sm border'}`}>
+                   <h3 className={`text-md font-bold mb-2 px-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Complaints by Status</h3>
                    <div className="flex-1">
                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -583,22 +589,22 @@ const Admin = () => {
                               <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name]} />
                             ))}
                           </Pie>
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '8px', color: isDark ? '#fff' : '#000' }} />
                           <Legend />
                         </PieChart>
                      </ResponsiveContainer>
                    </div>
                 </div>
 
-                <div className="glass-panel p-4 rounded-2xl border-white/10 flex flex-col">
-                   <h3 className="text-md font-bold text-gray-300 mb-2 px-2">Priority Distribution</h3>
+                <div className={`p-4 rounded-2xl flex flex-col ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200 shadow-sm border'}`}>
+                   <h3 className={`text-md font-bold mb-2 px-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Priority Distribution</h3>
                    <div className="flex-1">
                      <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={priorityCounts}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                           <XAxis dataKey="name" stroke="#64748b" tick={{fontSize: 12}} />
                           <YAxis stroke="#64748b" tick={{fontSize: 12}} allowDecimals={false} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '8px', color: isDark ? '#fff' : '#000' }} />
                           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                             {priorityCounts.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -615,26 +621,29 @@ const Admin = () => {
           {/* TAB: COMPLAINTS */}
           {activeTab === 'complaints' && (
             <motion.div key="complaints" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
-                 <h2 className="text-xl font-bold text-white">Complaint Moderation</h2>
-                 <p className="text-sm text-gray-400">Total: {complaints.length}</p>
+              <div className={`flex justify-between items-center p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
+                 <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Complaint Moderation</h2>
+                 <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total: {complaints.length}</p>
               </div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+                className={`rounded-2xl overflow-hidden border shadow-2xl ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200'}`}
               >
                 {/* Table Header with Search */}
-                <div className="p-4 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 w-full md:w-auto">
+                <div className={`p-4 border-b flex flex-col md:flex-row items-center justify-between gap-4 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+                  <div className="relative w-full md:w-auto">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-gray-400" />
+                    </div>
                     <input 
                       type="text"
-                      placeholder="Search by Complaint ID..."
+                      placeholder="Search by ID..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full md:w-64 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                      className={`w-full md:w-64 border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 ${isDark ? 'bg-black/40 border-white/10 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`}
                     />
                   </div>
                   <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
@@ -646,7 +655,9 @@ const Admin = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
-                          filterStatus === filter ? 'bg-blue-500 text-white font-bold' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                          filterStatus === filter 
+                          ? 'bg-blue-500 text-white font-bold' 
+                          : isDark ? 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                         }`}
                       >
                         {filter}
@@ -658,7 +669,7 @@ const Admin = () => {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
-                      <tr className="bg-black/40 border-b border-white/10 text-gray-400 text-xs tracking-wider uppercase">
+                      <tr className={`border-b text-xs tracking-wider uppercase ${isDark ? 'bg-black/40 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
                         <th className="p-4 pl-6 font-semibold w-72">Issue Details</th>
                         <th className="p-4 font-semibold w-40 text-center">AI Validation</th>
                         <th className="p-4 font-semibold text-center">Current Status</th>
@@ -667,9 +678,38 @@ const Admin = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {filteredComplaints.length === 0 ? (
+                      {loadingComplaints ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <tr key={`skeleton-${i}`} className={`border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                            <td className="p-4 pl-6">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 rounded-lg shimmer"></div>
+                                <div className="space-y-2">
+                                  <div className="h-4 w-32 shimmer rounded"></div>
+                                  <div className="h-3 w-24 shimmer rounded"></div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="h-6 w-24 mx-auto shimmer rounded-full"></div>
+                            </td>
+                            <td className="p-4">
+                              <div className="h-6 w-20 mx-auto shimmer rounded-full"></div>
+                            </td>
+                            <td className="p-4">
+                              <div className="space-y-2 flex flex-col items-center">
+                                <div className="h-4 w-20 shimmer rounded"></div>
+                                <div className="h-3 w-16 shimmer rounded"></div>
+                              </div>
+                            </td>
+                            <td className="p-4 pr-6 flex justify-end">
+                              <div className="h-8 w-8 shimmer rounded-lg"></div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : filteredComplaints.length === 0 ? (
                         <tr>
-                          <td colSpan="5" className="p-8 text-center text-gray-500">No complaints found.</td>
+                          <td colSpan="5" className={`p-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>No complaints found.</td>
                         </tr>
                       ) : filteredComplaints.map((c, i) => (
                         <motion.tr 
@@ -677,15 +717,15 @@ const Admin = () => {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.05 }}
-                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
-                          className="transition-colors group cursor-pointer"
+                          whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.02)' }}
+                          className={`transition-colors group cursor-pointer ${isDark ? '' : 'border-b border-gray-100'}`}
                         >
                           <td className="p-4 pl-6">
                             <div className="flex items-center space-x-3">
-                              <img src={c.imageUrl} alt="Issue" className="w-12 h-12 rounded-lg object-cover border border-white/10" crossOrigin="anonymous"/>
+                              <img src={c.imageUrl} alt="Issue" className={`w-12 h-12 rounded-lg object-cover border ${isDark ? 'border-white/10' : 'border-gray-200'}`} crossOrigin="anonymous"/>
                               <div>
-                                <p className="font-bold text-sm text-white line-clamp-1">{c.problemType}</p>
-                                <div className="text-[10px] text-gray-500 mb-1 flex items-center gap-1">
+                                <p className={`font-bold text-sm line-clamp-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{c.problemType}</p>
+                                <div className={`text-[10px] mb-1 flex items-center gap-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                                   {c.userEmail ? c.userEmail : 'No Email'} • 
                                   <button 
                                     onClick={(e) => {
@@ -694,7 +734,7 @@ const Admin = () => {
                                       setCopiedId(c.id || c._id);
                                       setTimeout(() => setCopiedId(null), 2000);
                                     }}
-                                    className="flex items-center gap-1 hover:text-white transition-colors group cursor-pointer font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/10 hover:border-white/20"
+                                    className={`flex items-center gap-1 transition-colors group cursor-pointer font-mono px-1.5 py-0.5 rounded border ${isDark ? 'hover:text-white bg-white/5 border-white/10 hover:border-white/20' : 'hover:text-gray-900 bg-gray-100 border-gray-200 hover:border-gray-300'}`}
                                     title="Copy ID"
                                   >
                                     #{c.id || c._id}
@@ -714,14 +754,9 @@ const Admin = () => {
                           
                           <td className="p-4 text-center">
                             <div className="flex flex-col items-center justify-center space-y-1">
-                              <span className={`text-[11px] px-2 py-1 rounded-md font-bold ${
-                                c.verificationStatus === 'Pending' ? 'bg-gray-500/20 text-gray-400' :
-                                c.verificationStatus === 'Approved manually' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                                c.verificationStatus === 'Rejected manually' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                'bg-blue-500/20 text-blue-400'
-                              }`}>
+                              <Badge>
                                 {c.verificationStatus || 'Unknown'}
-                              </span>
+                              </Badge>
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
                                 <button onClick={() => openVerificationModal(c, 'Approved manually')} title="Approve" className="p-1 hover:bg-emerald-500/20 text-emerald-500 rounded"><Check className="w-3 h-3"/></button>
                                 <button onClick={() => openVerificationModal(c, 'Rejected manually')} title="Reject" className="p-1 hover:bg-red-500/20 text-red-500 rounded"><X className="w-3 h-3"/></button>
@@ -733,15 +768,11 @@ const Admin = () => {
                             <select 
                                 value={c.status}
                                 onChange={(e) => handleStatusChange(c.id || c._id, c.status, e.target.value)}
-                                className={`text-[11px] font-bold rounded-lg px-2 py-1 outline-none appearance-none text-center cursor-pointer ${
-                                  c.status === 'Resolved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                  c.status === 'In Progress' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                                  'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                                }`}
+                                className="text-[11px] font-bold rounded-full px-3 py-1 outline-none appearance-none text-center cursor-pointer bg-[#EDE9FE] text-[#7C3AED] border border-[#7C3AED]/20 shadow-sm"
                               >
-                                <option value="Pending" className="bg-slate-900 text-orange-400">Pending</option>
-                                <option value="In Progress" className="bg-slate-900 text-blue-400">In Progress</option>
-                                <option value="Resolved" className="bg-slate-900 text-green-400">Resolved</option>
+                              <option value="Pending" className="bg-white text-[#7C3AED]">Pending</option>
+                              <option value="In Progress" className="bg-white text-[#7C3AED]">In Progress</option>
+                              <option value="Resolved" className="bg-white text-[#7C3AED]">Resolved</option>
                               </select>
                           </td>
 
@@ -782,8 +813,8 @@ const Admin = () => {
           {activeTab === 'flagged' && (
             <motion.div key="flagged" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               <div className="flex justify-between items-center bg-gradient-to-r from-red-500/10 to-orange-500/10 p-4 rounded-xl border border-red-500/20">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-red-400" /> Flagged Complaints Moderation
+                <h2 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <Shield className="w-5 h-5 text-red-500" /> Flagged Complaints Moderation
                 </h2>
                 <div className="flex items-center gap-3">
                   <span className="text-xs px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30">
@@ -802,8 +833,8 @@ const Admin = () => {
                   className="glass-panel rounded-2xl p-12 text-center border border-white/10"
                 >
                   <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-xl font-bold text-white mb-2">All Clear! 🎉</h3>
-                  <p className="text-gray-400">No flagged complaints requiring moderation.</p>
+                  <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>All Clear! 🎉</h3>
+                  <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>No flagged complaints requiring moderation.</p>
                 </motion.div>
               ) : (
                 <div className="space-y-4">
@@ -813,7 +844,7 @@ const Admin = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="glass-panel rounded-2xl border border-orange-500/20 overflow-hidden"
+                      className={`rounded-2xl border border-orange-500/20 overflow-hidden ${isDark ? 'glass-panel' : 'bg-white shadow-md'}`}
                     >
                       <div className="p-6">
                         <div className="flex items-start gap-5">
@@ -828,13 +859,13 @@ const Admin = () => {
                           {/* Details */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-bold text-white text-lg">{c.problemType}</h4>
+                              <h4 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>{c.problemType}</h4>
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                                 c.severity === 'High' ? 'bg-red-500/20 text-red-400' : c.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
                               }`}>{c.severity}</span>
                             </div>
 
-                            <p className="text-xs text-gray-400 mb-3 line-clamp-2">{c.description}</p>
+                            <p className={`text-xs mb-3 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.description}</p>
 
                             {/* Flag Reason */}
                             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-3">
@@ -882,7 +913,7 @@ const Admin = () => {
                             </div>
 
                             {/* User Info */}
-                            <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                            <div className={`flex items-center gap-2 mt-3 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                               <User className="w-3 h-3" />
                               <span>{c.userName || 'Anonymous'}</span>
                               <span>•</span>
@@ -894,7 +925,7 @@ const Admin = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-3 mt-5 pt-4 border-t border-white/10">
+                        <div className={`flex items-center gap-3 mt-5 pt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                           <motion.button
                             onClick={() => handleApproveComplaint(c)}
                             whileHover={{ scale: 1.02 }}
@@ -926,7 +957,7 @@ const Admin = () => {
                             onClick={() => handleDeleteComplaint(c.id || c._id)}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="py-3 px-4 rounded-xl bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 border border-white/10 transition-all"
+                            className={`py-3 px-4 rounded-xl transition-all ${isDark ? 'bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 border border-white/10' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 border border-gray-200'}`}
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -943,12 +974,12 @@ const Admin = () => {
           {/* TAB: MAP CLUSTERING */}
           {activeTab === 'map' && (
             <motion.div key="map" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full flex flex-col space-y-4">
-              <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
-                 <h2 className="text-xl font-bold text-white flex items-center gap-2"><MapPin/> Map Validation & Clustering</h2>
+              <div className={`flex justify-between items-center p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
+                 <h2 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}><MapPin/> Map Validation & Clustering</h2>
               </div>
-              <div className="flex-1 glass-panel rounded-2xl overflow-hidden border border-white/10 relative p-1 min-h-[500px]" style={darkMapFilterStyle}>
+              <div className={`flex-1 rounded-2xl overflow-hidden border relative p-1 min-h-[500px] ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200 shadow-sm'}`} style={isDark ? darkMapFilterStyle : {}}>
                  {!isLoaded ? (
-                   <div className="w-full h-full flex items-center justify-center bg-slate-900/50">
+                   <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-slate-900/50' : 'bg-gray-100'}`}>
                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                    </div>
                  ) : (
@@ -992,7 +1023,7 @@ const Admin = () => {
           {activeTab === 'users' && (
             <motion.div key="users" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               
-              <h2 className="text-2xl font-bold text-white mb-6">User Access Management</h2>
+              <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>User Access Management</h2>
 
               {adminRequests.length > 0 && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
@@ -1001,8 +1032,8 @@ const Admin = () => {
                     {adminRequests.map((req) => (
                       <div key={req.id} className="glass-panel p-4 rounded-xl flex items-center justify-between border-red-500/20">
                         <div>
-                          <p className="font-bold text-white text-sm">{req.name}</p>
-                          <p className="text-xs text-gray-400">{req.email}</p>
+                          <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{req.name}</p>
+                          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{req.email}</p>
                         </div>
                         <div className="flex space-x-1">
                           <button onClick={() => handleApproveRequest(req.uid, req.name)} className="p-1.5 bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white rounded"><Check className="w-4 h-4" /></button>
@@ -1014,10 +1045,10 @@ const Admin = () => {
                 </div>
               )}
 
-              <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-xl">
+              <div className={`rounded-2xl overflow-hidden border shadow-xl ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200'}`}>
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-black/20 border-b border-white/5 text-gray-400 text-xs tracking-wider uppercase">
+                    <tr className={`border-b text-xs tracking-wider uppercase ${isDark ? 'bg-black/20 border-white/5 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
                       <th className="p-4 pl-6 font-semibold">User</th>
                       <th className="p-4 font-semibold">Role</th>
                       <th className="p-4 font-semibold text-right pr-6">Action</th>
@@ -1025,10 +1056,10 @@ const Admin = () => {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {users.map((u) => (
-                      <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={u.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50 border-b border-gray-100'}`}>
                         <td className="p-4 pl-6">
-                          <p className="font-bold text-white text-sm">{u.name || 'Anonymous User'}</p>
-                          <p className="text-xs text-gray-400">{u.email}</p>
+                          <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{u.name || 'Anonymous User'}</p>
+                          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{u.email}</p>
                         </td>
                         <td className="p-4">
                            <span className={`inline-flex items-center space-x-1 px-2 py-1 text-[10px] font-bold rounded-md ${
@@ -1039,7 +1070,7 @@ const Admin = () => {
                         </td>
                         <td className="p-4 pr-6 text-right">
                           {u.role === 'admin' ? (
-                            <button onClick={() => handleDemote(u.uid, u.name)} disabled={u.uid === userData?.uid} className="px-3 py-1 text-xs font-bold rounded-lg bg-white/5 text-gray-400 hover:bg-orange-500 hover:text-white disabled:opacity-50">
+                            <button onClick={() => handleDemote(u.uid, u.name)} disabled={u.uid === userData?.uid} className={`px-3 py-1 text-xs font-bold rounded-lg disabled:opacity-50 ${isDark ? 'bg-white/5 text-gray-400 hover:bg-orange-500 hover:text-white' : 'bg-gray-100 text-gray-600 hover:bg-orange-500 hover:text-white'}`}>
                                Demote
                             </button>
                           ) : (
@@ -1070,21 +1101,21 @@ const Admin = () => {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`glass-panel p-8 rounded-2xl w-full ${modalType === 'letter' ? 'max-w-2xl' : 'max-w-md'} space-y-6 border border-white/10`}
+              className={`p-8 rounded-2xl w-full ${modalType === 'letter' ? 'max-w-2xl' : 'max-w-md'} space-y-6 border ${isDark ? 'glass-panel border-white/10' : 'bg-white shadow-xl border-gray-200'}`}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">
+                <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                    {modalType === 'resolve' && 'Resolve Issue'}
                    {modalType === 'verification' && 'Override Verification'}
                    {modalType === 'remark' && 'Add Timeline Remark'}
                    {modalType === 'letter' && 'Formal Complaint Letter'}
                 </h3>
-                <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white"><X className="w-5 h-5"/></button>
+                <button onClick={() => setModalOpen(false)} className={`hover:text-white ${isDark ? 'text-gray-400' : 'text-gray-500 hover:text-gray-900'}`}><X className="w-5 h-5"/></button>
               </div>
 
               {modalType === 'resolve' && (
                 <>
-                  <p className="text-sm text-gray-400">Upload or capture a photo showing the resolved issue as evidence.</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Upload or capture a photo showing the resolved issue as evidence.</p>
                   
                   {/* Hidden file inputs */}
                   <input
@@ -1124,13 +1155,13 @@ const Admin = () => {
                     <div className="flex flex-col items-center gap-4">
                       <div
                         onClick={() => resolveInputRef.current?.click()}
-                        className="w-full border-2 border-dashed border-white/15 hover:border-blue-400/50 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-white/5 group"
+                        className={`w-full border-2 border-dashed hover:border-blue-400/50 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all group ${isDark ? 'border-white/15 hover:bg-white/5' : 'border-gray-300 hover:bg-gray-50'}`}
                       >
                         <div className="p-3 bg-blue-500/10 rounded-full mb-3 group-hover:bg-blue-500/20 transition-colors">
                           <UploadCloud className="w-8 h-8 text-blue-400" />
                         </div>
-                        <p className="text-sm text-gray-300 font-medium">Click to browse files</p>
-                        <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 10MB</p>
+                        <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Click to browse files</p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>JPG, PNG up to 10MB</p>
                       </div>
                       
                       <button
@@ -1148,27 +1179,27 @@ const Admin = () => {
               
               {modalType === 'verification' && (
                 <>
-                  <p className="text-sm text-gray-400">Add an optional remark for overriding status to <b>{modalTarget?.newVerification}</b>.</p>
-                  <textarea value={modalInput} onChange={(e) => setModalInput(e.target.value)} placeholder="Reason for override..." className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 resize-none h-24" />
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Add an optional remark for overriding status to <b>{modalTarget?.newVerification}</b>.</p>
+                  <textarea value={modalInput} onChange={(e) => setModalInput(e.target.value)} placeholder="Reason for override..." className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 resize-none h-24 ${isDark ? 'bg-slate-900 border-white/10 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
                 </>
               )}
 
               {modalType === 'remark' && (
                 <>
-                  <p className="text-sm text-gray-400">This remark will be visible in the complaint timeline and dashboard.</p>
-                  <textarea value={modalInput} onChange={(e) => setModalInput(e.target.value)} placeholder="Enter details..." className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 resize-none h-24" />
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>This remark will be visible in the complaint timeline and dashboard.</p>
+                  <textarea value={modalInput} onChange={(e) => setModalInput(e.target.value)} placeholder="Enter details..." className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 resize-none h-24 ${isDark ? 'bg-slate-900 border-white/10 text-white' : 'bg-gray-50 border-gray-300 text-gray-900'}`} />
                 </>
               )}
 
               {modalType === 'letter' && (
-                <div className="bg-white/5 p-6 rounded-xl border border-white/10 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  <div className="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed font-serif">
+                <div className={`p-6 rounded-xl border max-h-[60vh] overflow-y-auto custom-scrollbar ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className={`whitespace-pre-wrap text-sm leading-relaxed font-serif ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                     {modalTarget?.formalLetter || 'No letter was generated for this issue.'}
                   </div>
                   {modalTarget?.translatedLetter && (
-                    <div className="mt-6 pt-6 border-t border-white/10">
+                    <div className={`mt-6 pt-6 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Translated Version ({modalTarget?.language})</p>
-                      <div className="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed font-serif">
+                      <div className={`whitespace-pre-wrap text-sm leading-relaxed font-serif ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                         {modalTarget?.translatedLetter}
                       </div>
                     </div>
@@ -1178,7 +1209,7 @@ const Admin = () => {
 
               <div className="flex space-x-3">
                 {modalType !== 'letter' && (
-                  <button onClick={() => setModalOpen(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all">Cancel</button>
+                  <button onClick={() => setModalOpen(false)} className={`flex-1 py-3 rounded-xl border transition-all ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/5' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}`}>Cancel</button>
                 )}
                 {modalType !== 'letter' ? (
                   <button 
@@ -1189,7 +1220,7 @@ const Admin = () => {
                     {resolveUploading ? 'Uploading...' : 'Confirm'}
                   </button>
                 ) : (
-                  <button onClick={() => setModalOpen(false)} className="w-full py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all">
+                  <button onClick={() => setModalOpen(false)} className={`w-full py-3 rounded-xl font-bold transition-all ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}>
                     Close
                   </button>
                 )}

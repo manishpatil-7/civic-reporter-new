@@ -3,19 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sendOTP, verifyOTP } from '../services/api';
-import { UserPlus, Mail, Lock, User, AlertCircle, Eye, EyeOff, Zap, ShieldCheck, ArrowLeft, RefreshCw } from 'lucide-react';
+import {
+  UserPlus, Mail, Lock, User, AlertCircle, Eye, EyeOff,
+  ShieldCheck, ArrowLeft, RefreshCw, Leaf
+} from 'lucide-react';
 import toast from 'react-hot-toast';
-import MagneticButton from '../components/MagneticButton';
 
-const FloatingBlob = ({ color, size, top, left, delay, duration }) => (
-  <motion.div
-    className={`absolute rounded-full blur-[80px] opacity-30 pointer-events-none ${color}`}
-    style={{ width: size, height: size, top, left }}
-    animate={{ x: [0, -30, 20, 0], y: [0, 30, -20, 0], scale: [1, 1.1, 0.95, 1] }}
-    transition={{ duration, repeat: Infinity, delay, ease: "easeInOut" }}
-  />
-);
-
+/* ---- Password Strength ---- */
 const PasswordStrength = ({ password }) => {
   const getStrength = (pwd) => {
     let score = 0;
@@ -27,51 +21,34 @@ const PasswordStrength = ({ password }) => {
   };
   const strength = getStrength(password);
   const levels = [
-    { label: 'Weak', color: 'bg-red-500', width: '25%' },
-    { label: 'Fair', color: 'bg-orange-500', width: '50%' },
-    { label: 'Good', color: 'bg-yellow-500', width: '75%' },
-    { label: 'Strong', color: 'bg-green-500', width: '100%' },
+    { label: 'Weak',   color: 'bg-red-500',    width: '25%' },
+    { label: 'Fair',   color: 'bg-amber-500',   width: '50%' },
+    { label: 'Good',   color: 'bg-yellow-400',  width: '75%' },
+    { label: 'Strong', color: 'bg-emerald-500', width: '100%' },
   ];
   if (password.length === 0) return null;
+  const level = levels[Math.max(0, strength - 1)] || levels[0];
   return (
-    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-xs text-gray-500">Password Strength</span>
-        <span className={`text-xs font-medium ${strength === 0 ? 'text-red-400' : strength === 1 ? 'text-orange-400' : strength === 2 ? 'text-yellow-400' : 'text-green-400'}`}>
-          {levels[strength]?.label || 'Weak'}
-        </span>
+        <span className="text-xs text-gray-500">Password strength</span>
+        <span className={`text-xs font-medium ${
+          strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : strength === 3 ? 'text-yellow-600' : 'text-emerald-600'
+        }`}>{level.label}</span>
       </div>
-      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-        <motion.div className={`h-full rounded-full ${levels[strength]?.color || 'bg-red-500'}`} initial={{ width: 0 }} animate={{ width: levels[strength]?.width || '25%' }} transition={{ duration: 0.3 }} />
+      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full ${level.color}`}
+          initial={{ width: 0 }}
+          animate={{ width: level.width }}
+          transition={{ duration: 0.3 }}
+        />
       </div>
-      <p className="text-xs text-gray-500 mt-1">{strength < 2 && 'Use 8+ chars with uppercase, numbers & symbols'}</p>
     </motion.div>
   );
 };
 
-const AnimatedInput = ({ type, value, onChange, label, icon: Icon, showToggle, onToggle, disabled }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const hasValue = value.length > 0;
-  return (
-    <div className="relative">
-      <motion.label className="absolute left-11 text-sm font-medium pointer-events-none z-10 bg-[#0B0F19] px-1" initial={false}
-        animate={{ y: isFocused || hasValue ? -28 : 12, scale: isFocused || hasValue ? 0.85 : 1, color: isFocused ? '#a855f7' : '#9ca3af' }}
-        transition={{ duration: 0.2 }}>{label}</motion.label>
-      <motion.div className="relative" animate={{ boxShadow: isFocused ? '0 0 0 3px rgba(168, 85, 247, 0.2), 0 0 20px rgba(168, 85, 247, 0.1)' : '0 0 0 0px rgba(168, 85, 247, 0)' }} style={{ borderRadius: '1rem' }}>
-        <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200 ${isFocused ? 'text-purple-400' : 'text-gray-500'}`} />
-        <input type={type} value={value} onChange={onChange} disabled={disabled}
-          onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 py-4 text-white placeholder-transparent focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-50" />
-        {showToggle && (
-          <button type="button" onClick={onToggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
-            {type === 'password' ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        )}
-      </motion.div>
-    </div>
-  );
-};
-
+/* ---- Signup Component ---- */
 const Signup = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
@@ -90,14 +67,12 @@ const Signup = () => {
   const [countdown, setCountdown] = useState(0);
   const otpRefs = useRef([]);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setInterval(() => setCountdown(p => p - 1), 1000);
     return () => clearInterval(timer);
   }, [countdown]);
 
-  // Step 1: Validate form & send OTP
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
@@ -108,9 +83,9 @@ const Signup = () => {
     setOtpSending(true);
     try {
       await sendOTP(email, name);
-      toast.success('OTP sent to your email! 📧');
+      toast.success('OTP sent to your email!');
       setStep(2);
-      setCountdown(300); // 5 min
+      setCountdown(300);
       setTimeout(() => otpRefs.current[0]?.focus(), 300);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP.');
@@ -119,7 +94,6 @@ const Signup = () => {
     }
   };
 
-  // Handle OTP input with auto-advance
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
@@ -143,11 +117,9 @@ const Signup = () => {
     }
   };
 
-  // Step 2: Verify OTP then create account
   const handleVerifyAndSignup = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) return setError('Please enter the complete 6-digit OTP.');
-
     setError('');
     setOtpVerifying(true);
     try {
@@ -157,9 +129,8 @@ const Signup = () => {
         setOtpVerifying(false);
         return;
       }
-      // OTP verified — now create Firebase account
       await signup(name, email, password);
-      toast.success('Account created successfully! 🚀');
+      toast.success('Account created successfully!');
       navigate('/');
     } catch (err) {
       const msg = err.response?.data?.message || err.code;
@@ -174,14 +145,13 @@ const Signup = () => {
     }
   };
 
-  // Resend OTP
   const handleResendOTP = async () => {
     if (countdown > 0) return;
     setOtpSending(true);
     setError('');
     try {
       await sendOTP(email, name);
-      toast.success('New OTP sent! 📧');
+      toast.success('New OTP sent!');
       setCountdown(300);
       setOtp(['', '', '', '', '', '']);
     } catch (err) {
@@ -194,174 +164,274 @@ const Signup = () => {
   const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="min-h-screen pt-24 px-6 flex items-center justify-center relative overflow-hidden">
-      <FloatingBlob color="bg-purple-600" size={300} top="10%" left="-10%" delay={0} duration={15} />
-      <FloatingBlob color="bg-blue-600" size={250} top="60%" left="-5%" delay={2} duration={18} />
-      <FloatingBlob color="bg-pink-600" size={200} top="-5%" left="40%" delay={4} duration={12} />
-      <FloatingBlob color="bg-cyan-600" size={180} top="70%" left="80%" delay={1} duration={20} />
+    <div className="min-h-screen flex bg-slate-50">
+      {/* Left Side - Value Prop & Social Proof */}
+      <div className="hidden lg:flex w-1/2 bg-emerald-800 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Abstract Background Shapes */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-700/50 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-emerald-900/40 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
 
-      <motion.div animate={{ rotate: -360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/3 left-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-        className="glass-premium p-8 md:p-12 rounded-3xl w-full max-w-md relative z-10 border border-white/10">
         <div className="relative z-10">
+          <Link to="/" className="inline-flex items-center gap-2 mb-16">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+              <Leaf className="w-6 h-6 text-emerald-700" />
+            </div>
+            <span className="text-2xl font-bold text-white tracking-tight">Civic Reporter</span>
+          </Link>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+              Real impact. <br /> Better neighborhoods.
+            </h1>
+            <p className="text-emerald-100 text-lg max-w-md leading-relaxed">
+              Report civic issues instantly, track their progress, and build a better community together with transparency and accountability.
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Trust Stats Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative z-10 bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl max-w-sm"
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-yellow-400/20 rounded-full flex items-center justify-center">
+              <ShieldCheck className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-white">Join Us</span>
+              </div>
+              <p className="text-emerald-100 text-sm flex items-center gap-1">
+                 Trusted by Citizens
+              </p>
+            </div>
+          </div>
+          <p className="text-emerald-50 text-sm italic">
+            "We are making our city better, one report at a time."
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Right Side - Signup Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md"
+      >
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex w-14 h-14 bg-emerald-100 rounded-2xl items-center justify-center mb-4">
+              {step === 1 ? (
+                <Leaf className="w-7 h-7 text-emerald-600" />
+              ) : (
+                <ShieldCheck className="w-7 h-7 text-emerald-600" />
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              {step === 1 ? 'Create account' : 'Verify your email'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {step === 1
+                ? 'Join Civic Reporter — help make your city better'
+                : `Enter the 6-digit OTP sent to ${email}`}
+            </p>
+          </div>
+
+          {/* Error */}
           <AnimatePresence mode="wait">
-            {/* ===================== STEP 1: REGISTRATION FORM ===================== */}
-            {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-                {/* Header */}
-                <motion.div className="text-center mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                  <motion.div className="inline-flex p-4 bg-gradient-to-br from-purple-500/20 to-blue-600/20 rounded-2xl mb-6 relative" whileHover={{ scale: 1.05, rotate: -5 }} transition={{ type: 'spring', stiffness: 400 }}>
-                    <div className="absolute inset-0 bg-purple-500/20 rounded-2xl blur-xl" />
-                    <UserPlus className="w-8 h-8 text-purple-400 relative z-10" />
-                  </motion.div>
-                  <h1 className="text-4xl font-extrabold mb-2">Create <span className="text-gradient">Account</span></h1>
-                  <p className="text-gray-400 text-sm">Join thousands making their cities better</p>
-                </motion.div>
-
-                {/* Error */}
-                <AnimatePresence mode="wait">
-                  {error && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                      className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center shrink-0"><AlertCircle className="w-5 h-5 text-red-400" /></div>
-                      <p className="text-sm text-red-300">{error}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Form */}
-                <form onSubmit={handleSendOTP} className="space-y-6">
-                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <AnimatedInput type="text" value={name} onChange={(e) => setName(e.target.value)} label="Full Name" icon={User} />
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                    <AnimatedInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} label="Email Address" icon={Mail} />
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
-                    <AnimatedInput type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} label="Password" icon={Lock} showToggle onToggle={() => setShowPassword(!showPassword)} />
-                    <PasswordStrength password={password} />
-                  </motion.div>
-
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                    <MagneticButton strength={0.15} className="w-full">
-                      <motion.button type="submit" disabled={otpSending} className="w-full py-4 rounded-2xl font-bold text-white relative overflow-hidden group" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-blue-600" animate={{ backgroundPosition: otpSending ? ['0% 50%', '100% 50%', '0% 50%'] : '0% 50%' }}
-                          transition={{ duration: 3, repeat: otpSending ? Infinity : 0, ease: "linear" }} style={{ backgroundSize: '200% 200%' }} />
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12" initial={{ x: '-200%' }} whileHover={{ x: '200%' }} transition={{ duration: 0.6 }} />
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          {otpSending ? (
-                            <><motion.div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} /><span>Sending OTP...</span></>
-                          ) : (
-                            <><Mail className="w-5 h-5" /><span>Send Verification OTP</span></>
-                          )}
-                        </span>
-                      </motion.button>
-                    </MagneticButton>
-                  </motion.div>
-                </form>
-
-                {/* Footer */}
-                <motion.div className="mt-8 pt-6 border-t border-white/10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                  <p className="text-center text-sm text-gray-400">Already have an account?{' '}
-                    <Link to="/login" className="text-purple-400 hover:text-purple-300 font-semibold transition-colors relative group">Sign in
-                      <span className="absolute -bottom-0.5 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-300" />
-                    </Link>
-                  </p>
-                </motion.div>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-50 border border-red-200 rounded-xl p-3.5 mb-5 flex items-center gap-3"
+              >
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-sm text-red-700">{error}</p>
               </motion.div>
             )}
+          </AnimatePresence>
 
-            {/* ===================== STEP 2: OTP VERIFICATION ===================== */}
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }}>
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <motion.div className="inline-flex p-4 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-2xl mb-6 relative"
-                    animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                    <div className="absolute inset-0 bg-green-500/20 rounded-2xl blur-xl" />
-                    <ShieldCheck className="w-8 h-8 text-green-400 relative z-10" />
-                  </motion.div>
-                  <h1 className="text-3xl font-extrabold mb-2 text-white">Verify Your <span className="text-gradient">Email</span></h1>
-                  <p className="text-gray-400 text-sm">We sent a 6-digit code to</p>
-                  <p className="text-purple-400 font-semibold text-sm mt-1">{email}</p>
+          {/* Step 1: Registration Form */}
+          {step === 1 && (
+            <form onSubmit={handleSendOTP} className="space-y-5">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="name">Full name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    placeholder="Your full name"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  />
                 </div>
+              </div>
 
-                {/* Error */}
-                <AnimatePresence mode="wait">
-                  {error && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                      className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 flex items-center gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-                      <p className="text-sm text-red-300">{error}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="email">Email address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  />
+                </div>
+              </div>
 
-                {/* OTP Input Grid */}
-                <div className="flex justify-center gap-3 mb-6" onPaste={handleOtpPaste}>
-                  {otp.map((digit, i) => (
-                    <motion.input
-                      key={i}
-                      ref={el => otpRefs.current[i] = el}
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="password">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    placeholder="Minimum 6 characters"
+                    className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <PasswordStrength password={password} />
+              </div>
+
+              <button
+                type="submit"
+                disabled={otpSending}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                {otpSending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Sending OTP...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    <span>Continue with OTP</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Step 2: OTP Verification */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-600 text-center mb-4">
+                  Enter the 6-digit code we sent to{' '}
+                  <span className="font-semibold text-gray-900">{email}</span>
+                </p>
+                <div className="flex justify-center gap-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={el => (otpRefs.current[index] = el)}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
                       value={digit}
-                      onChange={(e) => handleOtpChange(i, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`w-14 h-16 text-center text-2xl font-bold rounded-2xl border-2 bg-white/5 text-white focus:outline-none transition-all ${
-                        digit ? 'border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/10' : 'border-white/10 focus:border-purple-500/50'
-                      }`}
+                      onChange={e => handleOtpChange(index, e.target.value)}
+                      onKeyDown={e => handleOtpKeyDown(index, e)}
+                      onPaste={index === 0 ? handleOtpPaste : undefined}
+                      className="w-11 h-12 text-center text-lg font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                     />
                   ))}
                 </div>
+              </div>
 
-                {/* Timer */}
-                <div className="text-center mb-6">
-                  {countdown > 0 ? (
-                    <p className="text-xs text-gray-500">Code expires in <span className="text-purple-400 font-bold">{formatTime(countdown)}</span></p>
-                  ) : (
-                    <p className="text-xs text-red-400 font-medium">OTP expired!</p>
-                  )}
-                </div>
+              {/* Countdown */}
+              {countdown > 0 && (
+                <p className="text-center text-sm text-gray-500">
+                  Resend OTP in <span className="font-semibold text-emerald-600">{formatTime(countdown)}</span>
+                </p>
+              )}
 
-                {/* Verify Button */}
-                <MagneticButton strength={0.15} className="w-full">
-                  <motion.button onClick={handleVerifyAndSignup} disabled={otpVerifying || otp.join('').length !== 6}
-                    className="w-full py-4 rounded-2xl font-bold text-white relative overflow-hidden disabled:opacity-50" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600" />
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      {otpVerifying ? (
-                        <><motion.div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} /><span>Verifying...</span></>
-                      ) : (
-                        <><ShieldCheck className="w-5 h-5" /><span>Verify & Create Account</span></>
-                      )}
-                    </span>
-                  </motion.button>
-                </MagneticButton>
+              {countdown === 0 && (
+                <button
+                  onClick={handleResendOTP}
+                  disabled={otpSending}
+                  className="flex items-center justify-center gap-2 w-full py-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Resend OTP</span>
+                </button>
+              )}
 
-                {/* Resend & Back */}
-                <div className="flex items-center justify-between mt-6">
-                  <button onClick={() => { setStep(1); setError(''); setOtp(['','','','','','']); }}
-                    className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back
-                  </button>
-                  <button onClick={handleResendOTP} disabled={countdown > 240 || otpSending}
-                    className="flex items-center gap-1.5 text-sm text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                    <RefreshCw className={`w-4 h-4 ${otpSending ? 'animate-spin' : ''}`} /> Resend OTP
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              <button
+                onClick={handleVerifyAndSignup}
+                disabled={otpVerifying || otp.join('').length !== 6}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                {otpVerifying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Verify &amp; Create Account</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => { setStep(1); setError(''); setOtp(['','','','','','']); }}
+                className="flex items-center justify-center gap-1.5 w-full text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to registration</span>
+              </button>
+            </div>
+          )}
+
+          {/* Footer */}
+          {step === 1 && (
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+              <p className="text-sm text-gray-500">
+                Already have an account?{' '}
+                <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
+      </div>
     </div>
   );
 };
