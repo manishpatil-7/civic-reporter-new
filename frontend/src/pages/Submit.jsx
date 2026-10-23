@@ -121,9 +121,40 @@ const Submit = () => {
   const handleDetectAuthority = async (lat, lng) => {
     setAuthorityLoading(true);
     try {
+      const knownUrbanWards = [
+        'shahupuri', 'rajarampuri', 'laxmipuri', 'tarabai park', 'kasba bawada', 'kasaba bawada', 'bawada',
+        'raman mala', 'ramanmala', 'phulewadi', 'rankala', 'shivaji peth', 'nagala park',
+        'ruikar colony', 'kadamwadi', 'line bazar', 'pratibha nagar', 'dabholkar corner',
+        'cbs', 'dasara chowk', 'bindu chowk', 'new palace', 'temblaiwadi', 'subhashnagar'
+      ];
       const res = await detectAuthority(lat, lng);
-      setAuthorityInfo(res.data);
-      setAuthorityOverride(res.data.authorityType);
+      let data = res.data;
+      const checkText = `${data?.authorityBody || ''} ${data?.displayAddress || ''}`.toLowerCase();
+      const isUrban = knownUrbanWards.some(w => checkText.includes(w));
+      const isRural = !isUrban && (lng < 74.205 || lng > 74.260 || lat < 16.670 || lat > 16.735);
+      if (isRural && data) {
+        const bodyVillage = (data.authorityBody || '')
+          .replace(/^Gram\s+Panchayat\s+/i, '')
+          .replace(/^Municipal\s+Corporation\s+/i, '')
+          .replace(/^Municipal\s+Council\s+/i, '')
+          .replace(/,?\s*(?:in\s+)?pune\s+division\b/gi, '')
+          .trim();
+        const displayVillage = (data.displayAddress || '').split(',')[0].trim();
+        const candidateVillage = (bodyVillage && !/^(?:kolhapur|pune|unnamed|local village)$/i.test(bodyVillage))
+          ? bodyVillage
+          : (displayVillage && !/^(?:kolhapur|pune|unnamed|local village)$/i.test(displayVillage))
+          ? displayVillage
+          : 'Local Village';
+        data = {
+          ...data,
+          authorityType: 'gram_panchayat',
+          authorityTitle: 'The Sarpanch',
+          authorityBody: `Gram Panchayat ${candidateVillage}`,
+          letterHeader: `To,\nThe Sarpanch,\nGram Panchayat ${candidateVillage},\nDistrict Kolhapur, Maharashtra`,
+        };
+      }
+      setAuthorityInfo(data);
+      setAuthorityOverride(data.authorityType);
     } catch (err) {
       console.error('Authority detection failed:', err);
     } finally {
@@ -136,13 +167,30 @@ const Submit = () => {
     setAuthorityOverride(newType);
     if (authorityInfo) {
       const selected = AUTHORITY_TYPES.find(a => a.value === newType);
-      const placeName = authorityInfo.address?.village || authorityInfo.address?.town || authorityInfo.address?.city || 'Unknown';
+      const rawPlace = authorityInfo.address?.village || authorityInfo.address?.suburb || authorityInfo.address?.town || authorityInfo.address?.city || 'Kolhapur';
+      const cleanP = rawPlace.replace(/,?\s*(?:in\s+)?pune\s+division\b/gi, '').replace(/\bdivision\b/gi, '').trim();
+      
+      let authorityBody = '';
+      if (newType === 'municipal_corporation') {
+        const knownCorps = ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik', 'Aurangabad', 'Solapur', 'Kolhapur', 'Amravati', 'Navi Mumbai', 'Pimpri-Chinchwad'];
+        const matchedCorp = knownCorps.find((c) => c.toLowerCase() === cleanP.toLowerCase());
+        authorityBody = `Municipal Corporation ${matchedCorp || 'Kolhapur'}`;
+      } else if (newType === 'gram_panchayat') {
+        const vName = (cleanP.toLowerCase() === 'kolhapur' || cleanP.toLowerCase() === 'pune' || !cleanP)
+          ? 'Local Village'
+          : cleanP;
+        authorityBody = `Gram Panchayat ${vName}`;
+      } else if (newType === 'municipal_council') {
+        authorityBody = `Municipal Council ${cleanP}`;
+      } else {
+        authorityBody = `${selected.label} ${cleanP}`;
+      }
       
       const updatedInfo = {
         ...authorityInfo,
         authorityType: newType,
         authorityTitle: selected.title,
-        authorityBody: `${selected.label} ${placeName}`,
+        authorityBody,
         confidence: 100, // User manually confirmed
         detectionMethod: 'manual_override',
       };
@@ -152,13 +200,13 @@ const Submit = () => {
       let letterHeader;
       if (newType === 'gram_panchayat') {
         const talukaLine = addr.taluka ? `Taluka ${addr.taluka},\n` : '';
-        const districtLine = addr.district ? `District ${addr.district}` : '';
-        const stateLine = addr.state ? `, ${addr.state}` : '';
-        letterHeader = `To,\n${selected.title},\n${selected.label} ${placeName},\n${talukaLine}${districtLine}${stateLine}`;
+        const districtLine = addr.district ? `District ${addr.district}` : 'District Kolhapur';
+        const stateLine = addr.state ? `, ${addr.state}` : ', Maharashtra';
+        letterHeader = `To,\n${selected.title},\n${authorityBody},\n${talukaLine}${districtLine}${stateLine}`;
       } else {
-        const districtLine = addr.district ? `\nDistrict ${addr.district}` : '';
-        const stateLine = addr.state ? `, ${addr.state}` : '';
-        letterHeader = `To,\n${selected.title},\n${selected.label} ${placeName},${districtLine}${stateLine}`;
+        const districtLine = addr.district ? `\nDistrict ${addr.district}` : '\nDistrict Kolhapur';
+        const stateLine = addr.state ? `, ${addr.state}` : ', Maharashtra';
+        letterHeader = `To,\n${selected.title},\n${authorityBody},${districtLine}${stateLine}`;
       }
       updatedInfo.letterHeader = letterHeader;
       

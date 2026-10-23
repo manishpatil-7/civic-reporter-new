@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Civic Reporter",
+    "slug": "civic-reporter",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ECFDF5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.civicreporter.app"
+    },
+    "android": {
+      "package": "com.civicreporter.app",
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#ECFDF5",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Civic Reporter to use your location to accurately route civic complaints to the local municipality."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Civic Reporter to access your photo gallery to upload civic issue evidence.",
+          "cameraPermission": "Allow Civic Reporter to use your camera to take real-time photos of civic issues."
+        }
+      ],
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2b3156c2-28b1-4adb-8cdf-02cfe6b7bd8f"
+      }
+    }
+  }
+}
