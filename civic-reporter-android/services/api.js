@@ -75,6 +75,59 @@ export const analyzeImage = async (
   fileOrUri,
   { userName = '', locationAddress = '', authorityInfo = null, category = '', problemType = '' } = {}
 ) => {
+  const isRoad = (category || problemType || '').toLowerCase().includes('pothole') || (category || '').toLowerCase().includes('road');
+  const isGarb = (category || problemType || '').toLowerCase().includes('garbage') || (category || '').toLowerCase().includes('waste');
+
+  if (isRoad) {
+    try {
+      const formData = formatImageFormData(fileOrUri);
+      formData.append('confidence', '0.25');
+      if (userName) formData.append('userName', userName);
+      if (locationAddress) formData.append('locationAddress', locationAddress);
+      if (authorityInfo) formData.append('authorityInfo', JSON.stringify(authorityInfo));
+      const directRes = await api.post('/ai/road-damage/detect', formData, {
+        transformRequest: (data) => data,
+        timeout: 45000,
+      });
+      if (directRes.data && directRes.data.success) {
+        return {
+          data: {
+            ...directRes.data,
+            detections: directRes.data.detections || [],
+            canReportManually: directRes.data.canReportManually ?? true,
+          },
+        };
+      }
+    } catch (e) {
+      console.warn('Direct road damage fallback to /upload + /ai/analyze:', e.message);
+    }
+  }
+
+  if (isGarb) {
+    try {
+      const formData = formatImageFormData(fileOrUri);
+      formData.append('confidence', '0.25');
+      if (userName) formData.append('userName', userName);
+      if (locationAddress) formData.append('locationAddress', locationAddress);
+      if (authorityInfo) formData.append('authorityInfo', JSON.stringify(authorityInfo));
+      const directRes = await api.post('/ai/garbage/detect', formData, {
+        transformRequest: (data) => data,
+        timeout: 45000,
+      });
+      if (directRes.data && directRes.data.success) {
+        return {
+          data: {
+            ...directRes.data,
+            detections: directRes.data.detections || [],
+            canReportManually: directRes.data.canReportManually ?? true,
+          },
+        };
+      }
+    } catch (e) {
+      console.warn('Direct garbage fallback to /upload + /ai/analyze:', e.message);
+    }
+  }
+
   const uploadRes = await uploadImage(fileOrUri);
   const imageUrl = uploadRes.data?.imageUrl;
 

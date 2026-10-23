@@ -2,7 +2,7 @@ import axios from 'axios';
 import { auth } from '../config/firebase'; // needed to get the token directly in the interceptor
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : 'https://civic-reporter.onrender.com/api');
+  ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : 'https://civic-reporter-android-app.onrender.com/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL, 
@@ -26,17 +26,28 @@ export const uploadImage = async (file) => {
   return api.post('/upload', formData);
 };
 
-// Analyze image with AI — now accepts userName, locationAddress, and authorityInfo
-export const analyzeImage = async (file, { userName = '', locationAddress = '', authorityInfo = null } = {}) => {
-  // First, upload to cloudinary via our endpoint
+// Analyze image with AI — supports userName, locationAddress, authorityInfo, category, problemType
+export const analyzeImage = async (file, { userName = '', locationAddress = '', authorityInfo = null, category = '', problemType = '' } = {}) => {
+  // First, upload to Cloudinary via our endpoint
   const uploadRes = await uploadImage(file);
-  const imageUrl = uploadRes.data.imageUrl;
+  const imageUrl = uploadRes.data?.imageUrl;
   
-  // Second, hit NVIDIA AI with the generated imageUrl + user context + authority
-  const aiRes = await api.post('/ai/analyze', { imageUrl, userName, locationAddress, authorityInfo });
+  // Second, hit AI analyze with generated imageUrl + context
+  const payload = { imageUrl, userName, locationAddress, authorityInfo };
+  if (category) payload.category = category;
+  if (problemType) payload.problemType = problemType;
+
+  const aiRes = await api.post('/ai/analyze', payload);
   
   // Attach imageUrl to result so Submit page has it
-  return { data: { ...aiRes.data, imageUrl } };
+  return { 
+    data: { 
+      ...aiRes.data, 
+      imageUrl,
+      detections: aiRes.data?.detections || [],
+      canReportManually: aiRes.data?.canReportManually ?? true,
+    } 
+  };
 };
 
 // AI-based duplicate detection — uses semantic similarity via embeddings
