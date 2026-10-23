@@ -345,6 +345,55 @@ const DetailsScreen = () => {
                 style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
               />
 
+              {/* AI Detections Bounding Box Overlay */}
+              {!showAfterImage && complaint.detections && complaint.detections.length > 0 && complaint.detections.map((det, idx) => {
+                const norm = det.normalized || (det.box_2d ? {
+                  y1: det.box_2d[0] / 1000,
+                  x1: det.box_2d[1] / 1000,
+                  y2: det.box_2d[2] / 1000,
+                  x2: det.box_2d[3] / 1000,
+                } : null);
+                if (!norm) return null;
+                const left = `${Math.max(0, norm.x1 * 100)}%`;
+                const top = `${Math.max(0, norm.y1 * 100)}%`;
+                const width = `${Math.min(100, (norm.x2 - norm.x1) * 100)}%`;
+                const height = `${Math.min(100, (norm.y2 - norm.y1) * 100)}%`;
+                const confPercent = Math.round((det.confidence || 0.85) * 100);
+
+                return (
+                  <View
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      left,
+                      top,
+                      width,
+                      height,
+                      borderWidth: 2,
+                      borderColor: '#10B981',
+                      borderRadius: 6,
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    }}
+                  >
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: -20,
+                        left: 0,
+                        backgroundColor: '#10B981',
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
+                        {det.label || 'Defect'} {confPercent}%
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+
               {/* Tap to Fullscreen Button */}
               <TouchableOpacity
                 onPress={() => {

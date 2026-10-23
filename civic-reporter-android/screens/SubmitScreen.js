@@ -45,6 +45,7 @@ import { useAuth } from '../context/AuthContext';
 import useUserLocation from '../hooks/useLocation';
 import {
   analyzeImage,
+  uploadImage,
   createComplaint,
   checkDuplicate,
   detectAuthority,
@@ -914,9 +915,24 @@ const SubmitScreen = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      let resolvedImageUrl = finalImageUrl;
+      if (!resolvedImageUrl || (!resolvedImageUrl.startsWith('http://') && !resolvedImageUrl.startsWith('https://'))) {
+        if (file) {
+          try {
+            const uploadRes = await uploadImage(file);
+            if (uploadRes.data?.imageUrl) {
+              resolvedImageUrl = uploadRes.data.imageUrl;
+              setFinalImageUrl(resolvedImageUrl);
+            }
+          } catch (uploadErr) {
+            console.warn('Fallback Cloudinary upload failed:', uploadErr);
+          }
+        }
+      }
+
       const dataToSubmit = {
         ...formData,
-        imageUrl: finalImageUrl || preview,
+        imageUrl: resolvedImageUrl || preview,
         userId: userData?.uid || '',
         userName: userData?.name || 'Anonymous',
         userEmail: userData?.email || '',
@@ -935,6 +951,7 @@ const SubmitScreen = () => {
         translatedLetter: translatedLetter || '',
         translatedLanguage: selectedLanguage !== 'en' ? selectedLanguage : '',
         imageValidation: imageValidation || {},
+        detections: detections || [],
         userLocation: {
           lat: userLoc.lat || 0,
           lng: userLoc.lng || 0,

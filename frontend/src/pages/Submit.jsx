@@ -7,7 +7,7 @@ import UploadBox from '../components/UploadBox';
 import Loader from '../components/Loader';
 import LocationDetector from '../components/LocationDetector';
 import DuplicateModal from '../components/DuplicateModal';
-import { analyzeImage, createComplaint, checkDuplicate, detectAuthority, translateLetter, checkCanSubmit, extractLocationFromImage, reverseGeocodeLocation } from '../services/api';
+import { analyzeImage, uploadImage, createComplaint, checkDuplicate, detectAuthority, translateLetter, checkCanSubmit, extractLocationFromImage, reverseGeocodeLocation } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import useUserLocation from '../hooks/useLocation';
 import exifr from 'exifr';
@@ -463,9 +463,24 @@ const Submit = () => {
     setIsSubmitting(true);
     setRateLimitError(null);
     try {
+      let resolvedImageUrl = finalImageUrl;
+      if (!resolvedImageUrl || (!resolvedImageUrl.startsWith('http://') && !resolvedImageUrl.startsWith('https://'))) {
+        if (file) {
+          try {
+            const uploadRes = await uploadImage(file);
+            if (uploadRes.data?.imageUrl) {
+              resolvedImageUrl = uploadRes.data.imageUrl;
+              setFinalImageUrl(resolvedImageUrl);
+            }
+          } catch (uploadErr) {
+            console.warn('Fallback Cloudinary upload failed:', uploadErr);
+          }
+        }
+      }
+
       const dataToSubmit = {
         ...formData,
-        imageUrl: finalImageUrl || preview,
+        imageUrl: resolvedImageUrl || preview,
         userId: userData?.uid || '',
         userName: userData?.name || 'Anonymous',
         userEmail: userData?.email || '',
@@ -485,6 +500,7 @@ const Submit = () => {
         translatedLanguage: selectedLanguage !== 'en' ? selectedLanguage : '',
         // Pass validation data to backend
         imageValidation: imageValidation || {},
+        detections: detections || [],
         // Pass user's actual GPS for location verification
         userLocation: {
           lat: location.lat || 0,

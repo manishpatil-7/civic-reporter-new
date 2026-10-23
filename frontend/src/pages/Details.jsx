@@ -355,6 +355,32 @@ const Details = () => {
                     alt="Evidence" 
                     className="w-full h-full object-cover"
                  />
+                 {!showAfterImage && complaint.detections && complaint.detections.length > 0 && complaint.detections.map((det, idx) => {
+                   const norm = det.normalized || (det.box_2d ? {
+                     y1: det.box_2d[0] / 1000,
+                     x1: det.box_2d[1] / 1000,
+                     y2: det.box_2d[2] / 1000,
+                     x2: det.box_2d[3] / 1000,
+                   } : null);
+                   if (!norm) return null;
+                   const left = `${Math.max(0, norm.x1 * 100)}%`;
+                   const top = `${Math.max(0, norm.y1 * 100)}%`;
+                   const width = `${Math.min(100, (norm.x2 - norm.x1) * 100)}%`;
+                   const height = `${Math.min(100, (norm.y2 - norm.y1) * 100)}%`;
+                   const confPercent = Math.round((det.confidence || 0.85) * 100);
+
+                   return (
+                     <div
+                       key={idx}
+                       className="absolute border-2 border-emerald-500 bg-emerald-500/15 rounded pointer-events-none"
+                       style={{ left, top, width, height }}
+                     >
+                       <span className="absolute -top-6 left-0 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                         {det.label || 'Defect'} {confPercent}%
+                       </span>
+                     </div>
+                   );
+                 })}
                </motion.div>
              </AnimatePresence>
              
